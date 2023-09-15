@@ -49,6 +49,7 @@ public:
 	{
 		_roti = _sum = 0.0;
 	}
+	double calcROTI();
 	~SatRot() {}
 
 	double _roti;
@@ -65,8 +66,9 @@ public:
 	~StecRoti() {}
 
 	void reset();
-	int pushTEC(IN Gtime t, IN string site, IN AtmoSite& siteatmo);
+	int pushTEC(IN AtmoEpochs& group, OUT set<string>* list);
 	int calcROT();
+	int calcROTI();
 	bool procRoti(IN Gtime tnow, IN AtmoEpochs& group);
 
 	map<RotKey, StecEpoch> _siteSatStec;
