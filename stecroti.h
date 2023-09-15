@@ -65,7 +65,7 @@ public:
 	~StecRoti() {}
 
 	void reset();
-	int pushTEC(IN Gtime t, IN string site, IN AtmoSite& siteatmo);
+	int pushTEC(IN AtmoEpochs& group, OUT set<string>* list);
 	int calcROT();
 	bool procRoti(IN Gtime tnow, IN AtmoEpochs& group);
 
