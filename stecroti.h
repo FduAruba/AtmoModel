@@ -62,17 +62,21 @@ typedef map<int, SatRot> SatRots;
 class StecRoti
 {
 public:
-	StecRoti() {}
+	StecRoti()
+	{
+		_badroti = 0;
+	}
 	~StecRoti() {}
 
 	void reset();
 	int pushTEC(IN AtmoEpochs& group, OUT set<string>* list);
-	int calcROT();
-	int calcROTI();
+	int calcROT(IN Gtime tnow);
+	int calcROTI(IN Gtime tnow);
 	bool procRoti(IN Gtime tnow, IN AtmoEpochs& group);
 
 	map<RotKey, StecEpoch> _siteSatStec;
 	SatRots _cellSatsRot[NUMSYS];
+	int _badroti;
 private:
 };
 #endif // !STEC_ROTI_H

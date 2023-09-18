@@ -1,5 +1,7 @@
 #include "stecmodel.h"
 
+#define		THRESHOLD_MAX_EXPAND_TIME	(120.0)
+
 void StecModel::setBasicOption(IN ProOption& opt, IN int res)
 {
 	_useres   = res;
@@ -34,9 +36,113 @@ void StecModel::setCurSys(IN int* usesys, IN int symbol)
 	}
 }
 
+int StecModel::findSatStec(IN Gtime tnow, IN string site, IN int prn, IN int ref, IN int idx,
+	IN AtmoEpochs& group, OUT map<int, double>& SD)
+{
+	for (auto pAtmo = group.rbegin(); pAtmo != group.rend(); ++pAtmo) {
+		double dt = tnow - pAtmo->first;
+		if (dt < 0.0) {
+			continue;
+		}
+		if (dt > THRESHOLD_MAX_EXPAND_TIME) {
+			break;
+		}
+
+		auto pSta = pAtmo->second._staAtmos.find(site);
+		if (pSta == pAtmo->second._staAtmos.end()) {
+			continue;
+		}
+		auto pSat = pSta->second._satInfos[idx].find(prn);
+		auto pRef = pSta->second._satInfos[idx].find(ref);
+		if (pSat == pSta->second._satInfos[idx].end()) {
+			//printf("%s %s sat %c%02d not found\n", strtime(tnow, 2).c_str(), site.c_str(), idx2sys(idx), prn);
+			continue;
+		}
+		if (pRef == pSta->second._satInfos[idx].end()) {
+			//printf("%s %s ref %c%02d not found\n", strtime(tnow, 2).c_str(), site.c_str(), idx2sys(idx), ref);
+			continue;
+		}
+
+		double dstec = pSat->second._iono - pRef->second._iono;
+
+		SD.emplace((int)dt, dstec);
+	}
+
+	return (int)SD.size();
+}
+
 bool StecModel::preCheckSatModel(IN Gtime tnow, IN AtmoEpochs& group, OUT AtmoEpoch& atmo)
 {	
+	int cnt = 0;
+	AtmoEpochs::iterator pAtmo;
+
 	_stecRoti.procRoti(tnow, group);
+
+	if ((pAtmo = group.find(tnow)) == group.end()) {
+		return false;
+	}
+
+	atmo._stanum = 0;
+	atmo._time = tnow;
+	time2epoch(tnow, atmo._ep);
+	for (int isys = 0; isys < NUMSYS; isys++) {
+		atmo._refSat[isys] = pAtmo->second._refSat[isys];
+	}
+
+	for (auto pSta : pAtmo->second._staAtmos) {
+		cnt++;
+		AtmoSite tmpSite;
+		tmpSite._staInfo._name = pSta.first;
+		for (int isys = 0; isys < NUMSYS; isys++) {
+			tmpSite._staInfo._supSys[isys] = pSta.second._staInfo._supSys[isys];
+		}
+		tmpSite._staInfo._ID = pSta.second._staInfo._ID;
+		for (int i = 0; i < 3; i++) {
+			tmpSite._staInfo._xyz[i] = pSta.second._staInfo._xyz[i];
+			tmpSite._staInfo._blh[i] = pSta.second._staInfo._blh[i];
+			tmpSite._staInfo._std_xyz[i] = pSta.second._staInfo._std_xyz[i];
+		}
+		for (int isys = 0; isys < NUMSYS; isys++) {
+			if (!(_cursys & _sysidx[isys])) {
+				continue;
+			}
+
+			int nsat = 0;
+			for (const auto& pSat : _satList[isys]) {
+				int prn = pSat;
+				int ref = pAtmo->second._refSat[isys];
+
+				int nep = 0;
+				map<int, double> SD_Stec;
+				nep = findSatStec(tnow, pSta.first, prn, ref, isys, group, SD_Stec);
+				if (nep <= 0) {
+					//printf("%s %c%02d %c%02d\n", pSta.first.c_str(), idx2sys(isys), prn, idx2sys(isys), ref);
+					continue;
+				}
+
+				auto pSat = pSta.second._satInfos[isys].find(prn);
+				if (pSat == pSta.second._satInfos[isys].end()) {
+					continue;
+				}
+
+				tmpSite._satInfos[isys].emplace(prn, pSat->second);
+				nsat++;
+			}
+			tmpSite._staInfo._satNum[isys] = nsat;
+		}
+		atmo._staAtmos.emplace(pSta.first, tmpSite);
+	}
+
+	for (auto& pSta : atmo._staAtmos) {
+		for (int isys = 0; isys < NUMSYS; isys++) {
+			if (!(_cursys & _sysidx[isys])) {
+				continue;
+			}
+
+
+		}
+	}
+
 
 	return true;
 }

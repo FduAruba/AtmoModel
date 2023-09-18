@@ -40,6 +40,7 @@ public:
 	{
 		_stanumGEC = _stanumR = 0;
 		_useres = 0;
+		_nbadroti = 0;
 	}
 	~LocalAtmoModel() {}
 
@@ -75,6 +76,9 @@ public:
 
 	AtmoEpochs _stecGroupGEC;	// stec group GEC
 	AtmoEpochs _stecGroupR;		// stec group R
+	/* debug */
+	int _nbadroti;
+
 private:
 };
 

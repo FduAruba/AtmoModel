@@ -257,7 +257,7 @@ void  LocalAtmoModel::uniformDatum(IN Gtime tnow, IN int* refsat, IN int symbol)
 				pSta.second._satInfos[isys].clear();
 			}
 			else if (pRef == pSta.second._satInfos[isys].end()) {
-				printf("%s: %1d %2d erase %s\n", strtime(tnow, 2).c_str(), isys, refsat[isys], ista.c_str());
+				//printf("%s: %1d %2d erase %s\n", strtime(tnow, 2).c_str(), isys, refsat[isys], ista.c_str());
 				pSta.second._staInfo._satNum[isys] = 0;
 				pSta.second._satInfos[isys].clear();
 			}
@@ -446,6 +446,9 @@ bool LocalAtmoModel::doStecModSys(IN int symbol)
 	_stecPro.setCurSys(_proOption._usesys, symbol);
 	_stecPro.preCheckSatModel(_stecPro._tnow, *groupAtmo, proAtmo);
 
+	if (_stecPro._stecRoti._badroti > 4) {
+		_nbadroti++;
+	}
 
 	return true;
 }
@@ -460,16 +463,12 @@ bool LocalAtmoModel::doStecMod(IN Gtime tnow, IN AtmoInfo& stecinf, OUT ProStecM
 	}
 
 	/* 2.STEC建模 */
-	if (_stanumGEC > 0) {
-		doStecModSys(0);
-	}
-	if (_stanumR > 0) {
-		doStecModSys(1);
-	}
+	if (_stanumGEC > 0) { doStecModSys(0); }
+	if (_stanumR   > 0) { doStecModSys(1); }
 
 	/* 3.若采用浮点/固定解混合建模，BD2重新选择QI最小的卫星作为参考星 */
 
 	/* 4.遍历系统/卫星，保存卫星残差信息 */
-	
+
 	return true;
 }

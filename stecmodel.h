@@ -130,6 +130,8 @@ public:
 
 	void setBasicOption(IN ProOption& opt, IN int res);
 	void setCurSys(IN int* usesys, IN int symbol);
+	int findSatStec(IN Gtime tnow, IN string site, IN int prn, IN int ref, IN int idx, 
+		IN AtmoEpochs& group, OUT map<int, double>& SD);
 	bool preCheckSatModel(IN Gtime tnow, IN AtmoEpochs& group, OUT AtmoEpoch& atmo);
 	const StecModEpoch* StecModInLastEpoch();
 
@@ -156,6 +158,7 @@ public:
 	/* math */
 	MatXd _X[NUMSYS][MAXSAT];				// coffeicient matrix
 	MatXd _Q[NUMSYS][MAXSAT];				// covariance  matrix
+	/* debug */
 
 private:
 };

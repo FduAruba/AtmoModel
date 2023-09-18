@@ -68,6 +68,7 @@ int main()
 		printf("%s #%2d nep=%6d nbad=%6d r1=%6.2f%% r2=%6.2f%%\n", pSta._name.c_str(), pSta._ID, pSta._nepo, pSta._nbad, r1, r2);
 	}
 	printf("nlack=%d\n", config._nlack);
+	printf("nbadroti=%d\n", localMod->_nbadroti);
 #endif
 
 	/* йм╥едз╢Ф©у╪Д */

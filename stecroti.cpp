@@ -9,25 +9,20 @@ RotKey::RotKey(IN string site, IN char system, IN int prn)
 
 double SatRot::calcROTI()
 {
-	int MAXITER = 10, rotSize = 0;
-
 	_roti = 0.0;
 
+	int MAXITER = 10, rotSize = 0;
 	for (int i = 0; i < MAXITER; i++) {
 		bool brk = true;
-
 		if ((rotSize = _rotArray.size()) == 0) {
 			return 0.0;
 		}
-
-		double avgRot = _sum / rotSize;
-
-		double argSum = 0.0;;
+		double avgRot = _sum / rotSize; // ¾ùÖµ
+		double argSum = 0.0;
 		for (auto& it : _rotArray) {
 			argSum += std::pow((it - avgRot), 2);
 		}
-
-		double STD = std::sqrt(argSum / rotSize);
+		double STD = std::sqrt(argSum / rotSize); // ·½²î
 
 		//for (auto it = _rotArray.begin(); it != _rotArray.end();) {
 		//	double diff = fabs(*it - avgRot);
@@ -45,9 +40,7 @@ double SatRot::calcROTI()
 			_roti = STD;
 			break;
 		}
-
 	}
-
 	return _roti;
 }
 
@@ -57,6 +50,7 @@ void StecRoti::reset()
 	for (int i = 0;i < NUMSYS;i++) {
 		_cellSatsRot[i].clear();
 	}
+	_badroti = 0;
 }
 
 int StecRoti::pushTEC(IN AtmoEpochs& group, OUT set<string>* list)
@@ -86,9 +80,9 @@ int StecRoti::pushTEC(IN AtmoEpochs& group, OUT set<string>* list)
 	return (int)_siteSatStec.size();
 }
 
-int StecRoti::calcROT()
+int StecRoti::calcROT(IN Gtime tnow)
 {
-	int cnt = 0;
+	int cnt = 0, bwrite = 0, cjmp = 0;
 	
 	for (auto& it : _siteSatStec) {
 		if (it.second.size() < 2) { continue; }
@@ -97,14 +91,17 @@ int StecRoti::calcROT()
 		int prn = it.first._prn;
 
 		auto in = it.second.end();
-		for (auto ie = it.second.begin();ie != it.second.end();++ie) {
+		for (auto ie = it.second.begin(); ie != it.second.end(); ++ie) {
 			in = ie; in++;
 			if (in != it.second.end()) {
 				double diffsec = in->first - ie->first;
 				if (diffsec > 0.0) {
 					double rot = (in->second - ie->second) * 60.0 / diffsec; // TECu/min
-					//if (fabs(rot) > 10 && prn == 2) {
-					//	printf("%s %d %s %f\n", strtime(ie->first, 2).c_str(), prn, it.first._site.c_str(), rot);
+					//if (fabs(rot) > 20.0 && in->first >= tnow) {
+					//	printf("%s %c%02d %4s %6.2f\n", strtime(ie->first, 2).c_str(), it.first._system, 
+					//		prn, it.first._site.c_str(), rot);
+					//	cjmp++;
+					//	bwrite = 1;
 					//}
 					_cellSatsRot[isys][prn]._rotArray.push_back(rot);
 					_cellSatsRot[isys][prn]._sum += rot;
@@ -113,20 +110,31 @@ int StecRoti::calcROT()
 			}
 		}
 	}
-
+	if (bwrite && cjmp > 50) {
+		printf("%s %d\n", strtime(tnow, 2).c_str(), cjmp);
+	}
+	
 	return cnt;
 }
 
-int StecRoti::calcROTI()
+int StecRoti::calcROTI(IN Gtime tnow)
 {
 	int cnt = 0;
 
 	for (int isys = 0; isys < NUMSYS; isys++) {
 		for (auto& it : _cellSatsRot[isys]) {
-			if (it.second.calcROTI() != 0.0) {
+			double roti = it.second.calcROTI();
+			if (roti != 0.0) {
+				if (roti > 4.0) {
+					_badroti++;
+				}
 				cnt++;
 			}
 		}
+	}
+
+	if (_badroti > 0) {
+		printf("%s %3d\n", strtime(tnow, 2).c_str(), _badroti);
 	}
 
 	return cnt;
@@ -137,21 +145,14 @@ bool StecRoti::procRoti(IN Gtime tnow, IN AtmoEpochs& group)
 	set<string> siteList;
 
 	StecRoti::reset();
-	if (group.size() < 2) {
-		return true;
-	}
 
-	if (!pushTEC(group, &siteList)) {
-		return false;
-	}
-
-	if (!calcROT()) {
-		return false;
-	}
-
-	if (!calcROTI()) {
-		return false;
-	}
+	if (group.size() < 2) { return true; }
+	// push tec data
+	if (!pushTEC(group, &siteList)) { return false; }
+	// calculate ROT
+	if (!calcROT(tnow)) { return false; }
+	// calculate ROTI
+	if (!calcROTI(tnow)) { return false; }
 
 	return true;
 }
