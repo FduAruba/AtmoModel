@@ -14,7 +14,7 @@ double SatRot::calcROTI()
 	int MAXITER = 10, rotSize = 0;
 	for (int i = 0; i < MAXITER; i++) {
 		bool brk = true;
-		if ((rotSize = _rotArray.size()) == 0) {
+		if ((rotSize = (int)_rotArray.size()) == 0) {
 			return 0.0;
 		}
 		double avgRot = _sum / rotSize; // ¾ùÖµ

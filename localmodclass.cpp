@@ -73,7 +73,7 @@ void GridInfo::deepcopy(const GridInfo& src)
 	for (int i = 0; i < 2; i++) {
 		_latgrid[i] = src._latgrid[i];
 		_longrid[i] = src._longrid[i];
-		_latcell[i] = src._loncell[i];
+		_latcell[i] = src._latcell[i];
 		_loncell[i] = src._loncell[i];
 		_step[i]    = src._step[i];
 		_center[i]  = src._center[i];
@@ -104,4 +104,25 @@ void ProOption::deepcopy(IN ProOption& src)
 	_qimulti = src._qimulti;
 	_qibase  = src._qibase;
 	_qicoeff = src._qicoeff;
+}
+
+void SiteGridDist::calcAllDist(IN AtmoEpoch& atmo, IN GridInfo& grid)
+{
+	for (const auto& pSta : atmo._staAtmos) {
+		string site = pSta.first;
+		double latB = pSta.second._staInfo._blh[0];
+		double lonB = pSta.second._staInfo._blh[1];
+
+		if (_dist[1].find(site) != _dist[1].end()) {
+			continue;
+		}
+
+		for (int i = 0; i < grid._gridNum; i++) {
+			int id = grid._grids[i]._id;
+			double latG = grid._grids[i]._lat;
+			double lonG = grid._grids[i]._lon;
+			double dist = sphereDist(latG, lonG, latB, lonB);
+			_dist[id][site] = dist;
+		}
+	}
 }

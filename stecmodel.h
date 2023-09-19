@@ -136,6 +136,8 @@ public:
 	int uniformRef(IO AtmoEpoch& atmo);
 	bool preCheckSatModel(IN Gtime tnow, IN AtmoEpochs& group, OUT AtmoEpoch& atmo);
 	const StecModEpoch* StecModInLastEpoch();
+	void initStecMod(IN AtmoEpoch& atmo);
+	void satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid);
 
 	/* basic option */
 	Gtime _tnow;							// current time

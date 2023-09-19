@@ -23,4 +23,6 @@ extern string strtime(IN Gtime t, IN int opt);
 extern void time2str(IN Gtime t, IN char* s, IN int opt);
 extern double str2num(IN char* s, IN int i, IN int n);
 
+extern double sphereDist(IN double latG, IN double lonG, IN double latB, IN double lonB);
+
 #endif

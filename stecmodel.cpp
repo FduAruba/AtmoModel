@@ -165,11 +165,11 @@ int StecModel::uniformRef(IO AtmoEpoch& atmo)
 
 bool StecModel::preCheckSatModel(IN Gtime tnow, IN AtmoEpochs& group, OUT AtmoEpoch& atmo)
 {
-	// calculate ROTI
+	/* calculate ROTI */
 	_stecRoti.procRoti(tnow, group);
-	// get current atmo data
+	/* get current atmo data */
 	if (!getAtmo(tnow, group, atmo)) { return false; }
-	// uniform the ref sat and recovery the SD STEC
+	/* uniform the ref sat and recovery the SD STEC */
 	if (!uniformRef(atmo)) { return false; }
 
 	return true;
@@ -178,4 +178,39 @@ bool StecModel::preCheckSatModel(IN Gtime tnow, IN AtmoEpochs& group, OUT AtmoEp
 const StecModEpoch* StecModel::StecModInLastEpoch()
 {
 	return _stecModList.size() > 0 ? &_stecModList.rbegin()->second : NULL;
+}
+
+void StecModel::initStecMod(IN AtmoEpoch& atmo)
+{
+	/* skip GLONASS */
+	if (_cursys & SYS_GLO && _stecModRes._stanum > 0) {
+		return;
+	}
+
+	/* init stecmod */
+	for (int isys = 0; isys < NUMSYS; isys++) {
+		_stecModCur._satNum[isys] = 0;
+		_stecModCur._refsat[isys] = atmo._refSat[isys];
+		_stecModCur._stecmodgnss[isys].clear();
+	}
+	_stecModCur._modetype = 1;
+	_stecModCur._time = atmo._time;
+
+	/* init stecres */
+	_stecModRes._stanum = atmo._stanum;
+	time2epoch(atmo._time, _stecModRes._ep);
+	_stecModRes._time = atmo._time;
+	_stecModRes._staRes.clear();
+
+	return;
+}
+
+void StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
+{
+	/* 1.计算基线距离 */
+	_siteGridDist.calcAllDist(atmo, grid);
+
+	/* 2.参数/残差估计 */
+
+
 }

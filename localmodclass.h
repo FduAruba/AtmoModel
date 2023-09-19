@@ -113,8 +113,8 @@ private:
 struct GridEach
 {
 	int    _id;		// grid ID
-	double _lat;	// latitude  (deg)
-	double _lon;	// longitude (deg)
+	double _lat;	// latitude  (rad)
+	double _lon;	// longitude (rad)
 };
 /* grid information */
 class GridInfo
@@ -147,15 +147,6 @@ public:
 	double _length[2];			// length   [0]lat [1]lon (deg)
 	GridEach _grids[MAX_GRID];	// grid datas
 
-private:
-};
-/* distance from site to grid */
-using SiteDist = unordered_map<string, double>;
-class SiteGridDist
-{
-public:
-
-	unordered_map<int, SiteDist> _dist;	// gridid->site->dist
 private:
 };
 /* sat solution */
@@ -505,6 +496,16 @@ public:
 	double _qibase;				// QI for base
 	double _qicoeff;			// QI for coeffieientss
 
+private:
+};
+/* distance from site to grid */
+using SiteDist = unordered_map<string, double>;
+class SiteGridDist
+{
+public:
+	void calcAllDist(IN AtmoEpoch& atmo, IN GridInfo& grid);
+
+	unordered_map<int, SiteDist> _dist;	// gridid->site->dist
 private:
 };
 

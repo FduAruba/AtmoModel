@@ -583,8 +583,8 @@ extern bool movGrids(IN Coption& config, OUT GridInfo& grid)
 	for (double ilat = grid._latgrid[0]; ilat <= grid._latgrid[1]; ilat += dlat) {
 		for (double ilon = grid._longrid[0]; ilon <= grid._longrid[1]; ilon += dlon) {
 			grid._grids[idx]._id = idx + 1;
-			grid._grids[idx]._lat = ilat;
-			grid._grids[idx]._lon = ilon;
+			grid._grids[idx]._lat = ilat * D2R;
+			grid._grids[idx]._lon = ilon * D2R;
 
 			if (++idx > MAX_GRID) {
 				printf("***WARNNING: too many grids %d>%d\n", idx, MAX_GRID);

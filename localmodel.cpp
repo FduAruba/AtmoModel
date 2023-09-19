@@ -19,40 +19,50 @@ bool LocalAtmoModel::setRefSites(IN SiteAtmos& stas)
 {
 	for (auto pSta : stas) {
 		int id = pSta.first;
+
 		if (_allsites.find(id) != _allsites.end()) {
-			continue;
-		}
-		
-		SiteInfo onesite;
-
-		onesite._name = pSta.second._name;
-		onesite._ID   = id;
-		for (int i = 0; i < 3; i++) {
-			onesite._xyz[i] = pSta.second._xyz[i];
-			onesite._blh[i] = pSta.second._blh[i];
-		}
-		for (int i = 0; i < NUMSYS; i++) {
-			if (pSta.second._satIon[i].size() > 0) {
-				onesite._satNum[i] = (int)pSta.second._satIon[i].size();
-				onesite._supSys[i] = 1;
-			}
-			else {
-				onesite._satNum[i] = 0;
-				onesite._supSys[i] = 0;
+			for (int i = 0; i < NUMSYS; i++) {
+				if (pSta.second._satIon[i].size() > 0) {
+					_allsites[id]._satNum[i] = (int)pSta.second._satIon[i].size();
+					_allsites[id]._supSys[i] = 1;
+				}
+				else {
+					_allsites[id]._satNum[i] = 0;
+					_allsites[id]._supSys[i] = 0;
+				}
 			}
 		}
+		else {
+			SiteInfo onesite;
+			onesite._name = pSta.second._name;
+			onesite._ID = id;
+			for (int i = 0; i < 3; i++) {
+				onesite._xyz[i] = pSta.second._xyz[i];
+				onesite._blh[i] = pSta.second._blh[i];
+			}
+			for (int i = 0; i < NUMSYS; i++) {
+				if (pSta.second._satIon[i].size() > 0) {
+					onesite._satNum[i] = (int)pSta.second._satIon[i].size();
+					onesite._supSys[i] = 1;
+				}
+				else {
+					onesite._satNum[i] = 0;
+					onesite._supSys[i] = 0;
+				}
+			}
 
-		if (pSta.second._satIon[0].size() > 0 ||
-			pSta.second._satIon[2].size() > 0 ||
-			pSta.second._satIon[3].size() > 0 ||
-			pSta.second._satIon[4].size() > 0) {
-			_stanumGEC++;
-		}
-		if (pSta.second._satIon[1].size() > 0) {
-			_stanumR++;
-		}
+			if (pSta.second._satIon[0].size() > 0 ||
+				pSta.second._satIon[2].size() > 0 ||
+				pSta.second._satIon[3].size() > 0 ||
+				pSta.second._satIon[4].size() > 0) {
+				_stanumGEC++;
+			}
+			if (pSta.second._satIon[1].size() > 0) {
+				_stanumR++;
+			}
 
-		_allsites.emplace(id, onesite);
+			_allsites.emplace(id, onesite);
+		}
 	}
 	
 	return _allsites.size() > 0 ? true : false;
@@ -443,8 +453,19 @@ bool LocalAtmoModel::doStecModSys(IN int symbol)
 	AtmoEpoch proAtmo;
 	AtmoEpochs* groupAtmo = symbol == 0 ? &_stecGroupGEC : &_stecGroupR;
 
+	/* set current system */
 	_stecPro.setCurSys(_proOption._usesys, symbol);
-	_stecPro.preCheckSatModel(_stecPro._tnow, *groupAtmo, proAtmo);
+
+	/* pre-check model */
+	if (!_stecPro.preCheckSatModel(_stecPro._tnow, *groupAtmo, proAtmo)) {
+		return false;
+	}
+
+	/* initialize stec model & residual */
+	_stecPro.initStecMod(proAtmo);
+
+	/* do sat model estimation */
+	_stecPro.satModEst(proAtmo, _gridinfo);
 
 	if (_stecPro._stecRoti._badroti > 4) {
 		_nbadroti++;

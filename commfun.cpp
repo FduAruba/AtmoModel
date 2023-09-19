@@ -273,3 +273,15 @@ extern double str2num(IN char* s, IN int i, IN int n)
 	if (sscanf_s(str, "%lf", &value) == 1) { return value; }
 	else { return 0.0; }
 }
+
+extern double sphereDist(IN double latG, IN double lonG, IN double latB, IN double lonB)
+{
+	double m;
+	m = sin(latB) * sin(latG) + cos(latB) * cos(latG) * cos((lonB - lonG));
+	if (fabs(m) >= 1.0) {
+		return 0.0;
+	}
+	else {
+		return RE_WGS84 * acos(m);
+	}
+}
