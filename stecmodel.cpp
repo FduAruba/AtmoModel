@@ -71,15 +71,12 @@ int StecModel::findSatStec(IN Gtime tnow, IN string site, IN int prn, IN int ref
 	return (int)SD.size();
 }
 
-bool StecModel::preCheckSatModel(IN Gtime tnow, IN AtmoEpochs& group, OUT AtmoEpoch& atmo)
-{	
+int StecModel::getAtmo(IN Gtime tnow, IN AtmoEpochs& group, OUT AtmoEpoch& atmo)
+{
 	int cnt = 0;
 	AtmoEpochs::iterator pAtmo;
-
-	_stecRoti.procRoti(tnow, group);
-
 	if ((pAtmo = group.find(tnow)) == group.end()) {
-		return false;
+		return 0;
 	}
 
 	atmo._stanum = 0;
@@ -90,7 +87,6 @@ bool StecModel::preCheckSatModel(IN Gtime tnow, IN AtmoEpochs& group, OUT AtmoEp
 	}
 
 	for (auto pSta : pAtmo->second._staAtmos) {
-		cnt++;
 		AtmoSite tmpSite;
 		tmpSite._staInfo._name = pSta.first;
 		for (int isys = 0; isys < NUMSYS; isys++) {
@@ -116,7 +112,6 @@ bool StecModel::preCheckSatModel(IN Gtime tnow, IN AtmoEpochs& group, OUT AtmoEp
 				map<int, double> SD_Stec;
 				nep = findSatStec(tnow, pSta.first, prn, ref, isys, group, SD_Stec);
 				if (nep <= 0) {
-					//printf("%s %c%02d %c%02d\n", pSta.first.c_str(), idx2sys(isys), prn, idx2sys(isys), ref);
 					continue;
 				}
 
@@ -131,18 +126,51 @@ bool StecModel::preCheckSatModel(IN Gtime tnow, IN AtmoEpochs& group, OUT AtmoEp
 			tmpSite._staInfo._satNum[isys] = nsat;
 		}
 		atmo._staAtmos.emplace(pSta.first, tmpSite);
+		cnt++;
 	}
 
+	return cnt;
+}
+
+int StecModel::uniformRef(IO AtmoEpoch& atmo)
+{
 	for (auto& pSta : atmo._staAtmos) {
+		bool buse = false;
 		for (int isys = 0; isys < NUMSYS; isys++) {
 			if (!(_cursys & _sysidx[isys])) {
 				continue;
 			}
+			if (pSta.second._satInfos[isys].size() == 0) {
+				continue;
+			}
 
-
+			auto pRef = pSta.second._satInfos[isys].find(atmo._refSat[isys]);
+			if (pRef == pSta.second._satInfos[isys].end() || atmo._refSat[isys] == 0) {
+				pSta.second._staInfo._satNum[isys] = 0;
+				pSta.second._satInfos[isys].clear();
+			}
+			else {
+				double refion = pRef->second._iono;
+				for (auto& pSat : pSta.second._satInfos[isys]) {
+					pSat.second._iono -= refion;
+				}
+				buse = true;
+			}
 		}
+		atmo._stanum += buse ? 1 : 0;
 	}
 
+	return atmo._stanum;
+}
+
+bool StecModel::preCheckSatModel(IN Gtime tnow, IN AtmoEpochs& group, OUT AtmoEpoch& atmo)
+{
+	// calculate ROTI
+	_stecRoti.procRoti(tnow, group);
+	// get current atmo data
+	if (!getAtmo(tnow, group, atmo)) { return false; }
+	// uniform the ref sat and recovery the SD STEC
+	if (!uniformRef(atmo)) { return false; }
 
 	return true;
 }

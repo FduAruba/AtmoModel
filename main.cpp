@@ -1,6 +1,5 @@
 #include <iostream>
 #include <bitset>
-
 #include "readfiles.h"
 
 using namespace std;
