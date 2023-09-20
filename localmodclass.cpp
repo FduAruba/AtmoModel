@@ -113,7 +113,8 @@ void SiteGridDist::calcAllDist(IN AtmoEpoch& atmo, IN GridInfo& grid)
 		double latB = pSta.second._staInfo._blh[0];
 		double lonB = pSta.second._staInfo._blh[1];
 
-		if (_dist[1].find(site) != _dist[1].end()) {
+		if (_dist.find(1) != _dist.end() && 
+			_dist[1].find(site) != _dist[1].end()) {
 			continue;
 		}
 
