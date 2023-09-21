@@ -62,6 +62,7 @@ public:
 		_ele = 0.0;
 	}
 	~StecModSat() {};
+	void reset();
 
 	/* sat info */
 	char   _system;						// system captial GREC
@@ -70,7 +71,7 @@ public:
 	/* coffeicients & residual */
 	double _coff[4];					// coffeicient C00 C01 C10 C11
 	double _coff_res[4];				// coffeicient residual
-	double _QI[2];						// [0]withput res [1]with res
+	double _QI[2];						// [0]without res [1]with res
 	int    _gridNum;					// grid number
 	map<int, StecGrid> _stecpergrid;	// stec grids
 	unsigned char _satreslevel;			// 2.0.0 add 0~7
@@ -101,6 +102,31 @@ public:
 private:
 };
 
+class stecOBS
+{
+public:
+	stecOBS()
+	{
+		_id = 0;
+		_lat = 0.0;
+		_lon = 0.0;
+		_stec = 0.0;
+		_wgt = 0.0;
+	}
+	~stecOBS() {}
+	bool operator == (const stecOBS& src) const {
+		return (fabs(src._lat - _lat) < DBL_EPSILON) &&
+			   (fabs(src._lon - _lon) < DBL_EPSILON);
+	}
+
+	int    _id;
+	double _lat;
+	double _lon;
+	double _stec;
+	double _wgt;
+private:
+};
+
 class StecModel
 {
 public:
@@ -122,6 +148,10 @@ public:
 		_sysidx[3] = SYS_BDS2;
 		_sysidx[4] = SYS_BDS3;
 		_refsatsmooth = 0;
+		_minel = 0.0;
+		for (int i = 0; i < 5; i++) {
+			_roti[i] = 0.0;
+		}
 		_qi_multi = 0.68;
 		_qi_base  = 0.0;
 		_qi_coeff = 1.0;
@@ -129,7 +159,7 @@ public:
 	~StecModel() {}
 
 	void setBasicOption(IN ProOption& opt, IN int res);
-	void setCurSys(IN int* usesys, IN int symbol);
+	bool setCurSys(IN int* usesys, IN int symbol);
 	int findSatStec(IN Gtime tnow, IN string site, IN int prn, IN int ref, IN int idx, 
 		IN AtmoEpochs& group, OUT map<int, double>& SD);
 	int getAtmo(IN Gtime tnow, IN AtmoEpochs& group, OUT AtmoEpoch& atmo);
@@ -137,6 +167,11 @@ public:
 	bool preCheckSatModel(IN Gtime tnow, IN AtmoEpochs& group, OUT AtmoEpoch& atmo);
 	const StecModEpoch* StecModInLastEpoch();
 	void initStecMod(IN AtmoEpoch& atmo);
+	bool checkSatStatus(IN AtmoEpoch& atmo, IN int sys, IN int prn);
+	bool getStecObs(IN AtmoEpoch& atmo, IN int sys, IN int prn, OUT vector<stecOBS>& obss);
+	int markUnhalthSites(IO vector<stecOBS>& obss);
+	bool estCoeff(IN vector<stecOBS>& obss, IN GridInfo& grid, IN int sys, IN int prn, OUT StecModSat& dat);
+	bool oneSatModelEst(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys, IN int prn, OUT StecModSat& dat);
 	void satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid);
 
 	/* basic option */

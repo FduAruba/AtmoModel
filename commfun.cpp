@@ -51,6 +51,7 @@ extern void cutSep(IO char* str)
 	}
 }
 
+
 extern void pos2ecef(IN double* pos, OUT double* r)
 {
 	double sinp = sin(pos[0]), cosp = cos(pos[0]), sinl = sin(pos[1]), cosl = cos(pos[1]);
@@ -60,6 +61,19 @@ extern void pos2ecef(IN double* pos, OUT double* r)
 	r[1] = (v + pos[2]) * cosp * sinl;
 	r[2] = (v * (1.0 - e2) + pos[2]) * sinp;
 }
+
+extern double sphereDist(IN double latG, IN double lonG, IN double latB, IN double lonB)
+{
+	double m;
+	m = sin(latB) * sin(latG) + cos(latB) * cos(latG) * cos((lonB - lonG));
+	if (fabs(m) >= 1.0) {
+		return 0.0;
+	}
+	else {
+		return RE_WGS84 * acos(m);
+	}
+}
+
 
 extern bool checksys(IN char s)
 {
@@ -112,9 +126,9 @@ extern char idx2sys(IN int idx)
 	case 2:  { return 'E'; }
 	case 3:  { return 'C'; }
 	case 4:  { return 'C'; }
-	default: { return '\0'; }
+	default: { return 'X'; }
 	}
-	return '\0';
+	return 'X';
 }
 
 extern int satsys(IN int sat, OUT int* prn)
@@ -274,14 +288,20 @@ extern double str2num(IN char* s, IN int i, IN int n)
 	else { return 0.0; }
 }
 
-extern double sphereDist(IN double latG, IN double lonG, IN double latB, IN double lonB)
+
+extern void calcMeanStd(IN vector<double> data, OUT double& vmean, OUT double& vstd)
 {
-	double m;
-	m = sin(latB) * sin(latG) + cos(latB) * cos(latG) * cos((lonB - lonG));
-	if (fabs(m) >= 1.0) {
-		return 0.0;
-	}
-	else {
-		return RE_WGS84 * acos(m);
+	vmean = vstd = 0.0;
+	
+	int n = data.size();
+	if (n > 0) {
+		double sum = accumulate(data.begin(), data.end(), 0.0);
+		vmean = sum / n;
+
+		double var = 0.0;
+		for (int i = 0; i < data.size(); i++) {
+			var += pow(data[i] - vmean, 2);
+		}
+		vstd = sqrt(var / n);
 	}
 }

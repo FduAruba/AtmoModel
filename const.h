@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <numeric>
 #include <math.h>
 #include <string.h>
 //#include "com_interface/interface_atmos.h"
@@ -94,10 +95,13 @@ using namespace std;
 #define MAXNAME     8                       // max characters of name
 
 /* stec model ---------------------------------------------------------------------*/
-#define MAX_GRID             200            // max number of grids
-#define MAX_EPOCH_STORE      10             // max atmo info epoch
-#define THRES_FIXSOL_PCT     0.5			// threshold of fix station percentage
-#define THRES_USESTA_PCT     0.5			// threshold of use station percentage
+#define STECNX               3                 // stec coffeicient number
+#define MAX_GRID             200               // max number of grids
+#define MAX_SITE             250               // max number of sites
+#define MAX_STEC_OBS         MAX_GRID+MAX_SITE // max number of stec obs
+#define MAX_EPOCH_STORE      10                // max atmo info epoch
+#define THRES_FIXSOL_PCT     0.5			   // threshold of fix station percentage
+#define THRES_USESTA_PCT     0.5			   // threshold of use station percentage
 
 
 

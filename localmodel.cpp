@@ -50,7 +50,6 @@ bool LocalAtmoModel::setRefSites(IN SiteAtmos& stas)
 					onesite._supSys[i] = 0;
 				}
 			}
-
 			if (pSta.second._satIon[0].size() > 0 ||
 				pSta.second._satIon[2].size() > 0 ||
 				pSta.second._satIon[3].size() > 0 ||
@@ -60,7 +59,6 @@ bool LocalAtmoModel::setRefSites(IN SiteAtmos& stas)
 			if (pSta.second._satIon[1].size() > 0) {
 				_stanumR++;
 			}
-
 			_allsites.emplace(id, onesite);
 		}
 	}
@@ -409,6 +407,7 @@ bool LocalAtmoModel::inputAtmoEpoch(IN Gtime tnow, IN AtmoInfo& stecinf, IN bool
 	int refsat[NUMSYS] = { 0,0,0,0,0 };
 	map<int, int> trackStas[NUMSYS];		// sys->prn->num
 	map<int, EleStation> numStas[NUMSYS];	// sys->prn->el
+	string tstr = strtime(tnow, 2);
 	
 	/* 1.预处理 */
 	// 前历元数据是否重复
@@ -433,6 +432,8 @@ bool LocalAtmoModel::inputAtmoEpoch(IN Gtime tnow, IN AtmoInfo& stecinf, IN bool
 			int prn = pSat.first;
 			if ((isys != 1 && pSat.second < _stanumGEC * THRES_USESTA_PCT) ||
 				(isys == 1 && pSat.second < _stanumR   * THRES_USESTA_PCT)) {
+				//char SYS = idx2sys(isys);
+				//printf("%s erase %c%02d\n", tstr.c_str(), SYS, prn);
 				_stecPro._satList[isys].erase(prn);
 			}
 		}
@@ -453,19 +454,20 @@ bool LocalAtmoModel::doStecModSys(IN int symbol)
 	AtmoEpoch proAtmo;
 	AtmoEpochs* groupAtmo = symbol == 0 ? &_stecGroupGEC : &_stecGroupR;
 
-	/* set current system */
-	_stecPro.setCurSys(_proOption._usesys, symbol);
-
-	/* pre-check model */
+	/* 设置当前系统 */
+	if (!_stecPro.setCurSys(_proOption._usesys, symbol)) {
+		return false;
+	}
+	/* 数据预处理 */
 	if (!_stecPro.preCheckSatModel(_stecPro._tnow, *groupAtmo, proAtmo)) {
 		return false;
 	}
-
-	/* initialize stec model & residual */
+	/* 初始化STEC模型&残差 */
 	_stecPro.initStecMod(proAtmo);
-
-	/* do sat model estimation */
+	/* STEC单星建模 */
 	_stecPro.satModEst(proAtmo, _gridinfo);
+
+
 
 	if (_stecPro._stecRoti._badroti > 4) {
 		_nbadroti++;

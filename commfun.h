@@ -9,6 +9,7 @@ extern void trimSpace(IO char* src);
 extern void cutSep(IO char* str);
 
 extern void pos2ecef(IN double* pos, OUT double* r);
+extern double sphereDist(IN double latG, IN double lonG, IN double latB, IN double lonB);
 
 extern bool checksys(IN char s);
 extern string sysstr(IN int sys);
@@ -23,6 +24,6 @@ extern string strtime(IN Gtime t, IN int opt);
 extern void time2str(IN Gtime t, IN char* s, IN int opt);
 extern double str2num(IN char* s, IN int i, IN int n);
 
-extern double sphereDist(IN double latG, IN double lonG, IN double latB, IN double lonB);
+extern void calcMeanStd(IN vector<double> data, OUT double& vmean, OUT double& vstd);
 
 #endif

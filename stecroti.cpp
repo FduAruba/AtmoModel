@@ -134,7 +134,7 @@ int StecRoti::calcROTI(IN Gtime tnow)
 	}
 
 	if (_badroti > 0) {
-		printf("%s %3d\n", strtime(tnow, 2).c_str(), _badroti);
+		//printf("%s %3d\n", strtime(tnow, 2).c_str(), _badroti);
 	}
 
 	return cnt;
