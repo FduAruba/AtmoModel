@@ -39,6 +39,9 @@
     <ClCompile Include="stecroti.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="algmatrix.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="atmo.h">
@@ -72,6 +75,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="stecmodel.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="algmatrix.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -3,6 +3,7 @@
 
 #include <Dense>
 #include <SVD>
+#include <LU>
 #include "const.h"
 #include "commtime.h"
 #include "commfun.h"

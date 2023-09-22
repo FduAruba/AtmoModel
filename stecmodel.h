@@ -3,6 +3,7 @@
 
 #include "comminterface.h"
 #include "localmodclass.h"
+#include "algmatrix.h"
 #include "stecroti.h"
 
 class Pos
@@ -13,15 +14,14 @@ public:
 		_lat = _lon = 0.0;
 	};
 	~Pos() {};
-	Pos(double lon, double lat) :_lon(lon), _lat(lat) {};
+	Pos(double lat, double lon) :_lon(lon), _lat(lat) {};
 
 	bool operator == (const Pos& src) const {
-		return fabs(src._lat - _lat) < DBL_EPSILON && 
-			   fabs(src._lon - _lon) < DBL_EPSILON;
+		return (fabs(src._lat - _lat) < DBL_EPSILON) && (fabs(src._lon - _lon) < DBL_EPSILON);
 	}
 
-	double _lat;
-	double _lon;
+	double _lat;	// latitude  (rad)
+	double _lon;	// longitude (rad)
 	
 private:
 };

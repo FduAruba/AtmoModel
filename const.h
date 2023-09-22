@@ -100,6 +100,7 @@ using namespace std;
 #define MAX_SITE             250               // max number of sites
 #define MAX_STEC_OBS         MAX_GRID+MAX_SITE // max number of stec obs
 #define MAX_EPOCH_STORE      10                // max atmo info epoch
+#define MAX_ITER             10                // max iteration of LSQ
 #define THRES_FIXSOL_PCT     0.5			   // threshold of fix station percentage
 #define THRES_USESTA_PCT     0.5			   // threshold of use station percentage
 

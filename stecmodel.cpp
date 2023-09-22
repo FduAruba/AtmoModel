@@ -303,7 +303,7 @@ bool StecModel::getStecObs(IN AtmoEpoch& atmo, IN int sys, IN int prn, OUT vecto
 			continue; // 卫星stec
 		}
 
-		double weight = 0.0;
+		double weight = 1.0;
 		if (_fixsys[sys] && pSat->second._fixflag != 1) {
 			continue; // 固定解
 		}
@@ -362,12 +362,10 @@ bool StecModel::estCoeff(IN vector<stecOBS>& obss, IN GridInfo& grid, IN int sys
 	dat.reset();
 
 	int nobs = 0;
-	MatXd* Y = new MatXd(MAX_STEC_OBS, 1);
-	MatXd* P = new MatXd(MAX_STEC_OBS, MAX_STEC_OBS);
+	VecXd* Y = new VecXd(MAX_STEC_OBS);
+	VecXd* P = new VecXd(MAX_STEC_OBS);
 	MatXd* H = new MatXd(MAX_STEC_OBS, STECNX);
-	Y->setZero();
-	P->setZero();
-	H->setZero();
+	Y->setZero(); P->setZero(); H->setZero();
 
 	/* 1.矩阵构建 */
 	for (auto& pOBS : obss) {
@@ -375,7 +373,7 @@ bool StecModel::estCoeff(IN vector<stecOBS>& obss, IN GridInfo& grid, IN int sys
 			continue;
 		}
 
-		Pos pos; pos._lat = pOBS._lat; pos._lon = pOBS._lon;
+		Pos pos(pOBS._lat, pOBS._lon);
 		if (find(_badsta.begin(), _badsta.end(), pos) != _badsta.end()) {
 			continue;
 		}
@@ -383,27 +381,59 @@ bool StecModel::estCoeff(IN vector<stecOBS>& obss, IN GridInfo& grid, IN int sys
 		double dlat = pos._lat - grid._center[0] * D2R;
 		double dlon = pos._lon - grid._center[1] * D2R;
 
-		(*Y)(nobs, 0) = pOBS._stec;
+		(*Y)(nobs) = pOBS._stec;
+		(*P)(nobs) = pOBS._wgt;
 		(*H)(nobs, 0) = 1.0;
 		(*H)(nobs, 1) = dlat;
 		(*H)(nobs, 2) = dlon;
-		(*P)(nobs, nobs) = pOBS._wgt;
 		nobs++;
 	}
+	Y->conservativeResize(nobs);
+	P->conservativeResize(nobs);
+	H->conservativeResize(nobs, STECNX);
 
+	//for (int i = 0; i < nobs; i++) {
+	//	//printf("%8.3f", (*Y)(i, 0));
+	//	/*for (int j = 0; j < 3; j++) {
+	//		printf("%8.3f", (*H)(i, j));
+	//	}*/
+	//	/*for (int j = 0; j < nobs; j++) {
+	//		printf("%4.1f", (*P)(i, j));
+	//	}*/
+	//	printf("\n");
+	//}
 
-	/* 2.least square */
+	/* 2.最小二乘 */
+	double rms = 0.0, rmsmax = 0.0;
+	VecXd* V  = new VecXd(nobs);
+	VecXd* X  = new VecXd(STECNX);
+	VecXd* dx = new VecXd(STECNX);
+	V->setZero(); X->setZero(); dx->setZero();
+
+	(*V) = (*Y) - (*H) * (*X);
+	for (int i = 0; i < MAX_ITER; i++) {
+		// 最小二乘
+		(*dx) = wlsq_LU(*H, *V, *P);
+		(*X) += (*dx);
+		(*V) = (*Y) - (*H) * (*X);
+		// 更新权重矩阵
+		rmsmax = (*V).transpose() * (*V);
+		rms = sqrt(rmsmax / (nobs - STECNX));
+		for (int j = 0; j < nobs; j++) {
+			(*P)(j) *= robust((*V)(j) * sqrt((*P)(j)), rms);
+		}
+		// 残差判定
+		if ((*dx).transpose() * (*dx) < 1.0e-4) {
+			break;
+		}
+	}
 
 	/* 3.更新rms */
 
 	/* 4.保存建模系数 */
 
-	Y->resize(0, 0);
-	P->resize(0, 0);
-	H->resize(0, 0);
-	delete Y;
-	delete P;
-	delete H;
+	Y->resize(0); P->resize(0); H->resize(0, 0);
+	delete Y; delete P; delete H;
 	return true;
 }
 
