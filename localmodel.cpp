@@ -465,10 +465,8 @@ bool LocalAtmoModel::doStecModSys(IN int symbol)
 	}
 	/* 初始化STEC模型&残差 */
 	_stecPro.initStecMod(proAtmo);
-	/* STEC单星建模 */
+	/* stec单星建模 */
 	_stecPro.satModEst(proAtmo, _gridinfo);
-
-
 
 	if (_stecPro._stecRoti._badroti > 4) {
 		_nbadroti++;

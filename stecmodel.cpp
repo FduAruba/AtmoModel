@@ -2,6 +2,11 @@
 
 #define		THRESHOLD_MAX_EXPAND_TIME	(120.0)
 
+bool StecGrid::isVaild(IN double lat, IN double lon, IN double dlat, IN double dlon) const
+{
+	return (_lat > lat - dlat) && (_lat < lat + dlat) && (_lon > lon - dlon) && (_lon < lon + dlon);
+}
+
 void StecModSat::reset()
 {
 	_system = '\0';
@@ -469,14 +474,14 @@ bool StecModel::estCoeff(IN vector<stecOBS>& obss, IN GridInfo& grid, IN int sys
 		(*V) = (*Y) - (*H) * (*X);
 
 		// 更新权重
-		rmsmax = (*V).transpose() * (*V);
+		rmsmax = (*V).dot((*V));
 		rms = sqrt(rmsmax / (nobs - STECNX));
 		for (int j = 0; j < nobs; j++) {
 			(*P)(j) *= robust((*V)(j) * sqrt((*P)(j)), rms);
 		}
 
 		// 残差判定
-		if ((*dx).transpose() * (*dx) < 1.0E-3) {
+		if ((*dx).dot((*dx)) < 1.0E-3) {
 			break;
 		}
 	}
@@ -492,7 +497,7 @@ bool StecModel::estCoeff(IN vector<stecOBS>& obss, IN GridInfo& grid, IN int sys
 
 	/* 3.更新rms */
 	VecXd V2 = sliceVecByRate(*V);
-	rmsmax = V2.transpose() * V2;
+	rmsmax = V2.dot(V2);
 	nobs = (int)V2.rows();
 	rms = sqrt(rmsmax / (nobs - STECNX));
 
@@ -577,12 +582,14 @@ bool StecModel::oneSatModelEst(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys
 	return stat;
 }
 
-bool StecModel::calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid, OUT double& res)
+double StecModel::calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid)
 {
 	int ref = _stecModCur._refsat[sys];
+	double res = ERROR_VALUE;
 
 	StaDistIonArr stalist;
 	stalist.reserve(_stecModRes._staRes.size());
+
 	for (const auto& pSta : _stecModRes._staRes) {
 		string site = pSta.first;
 		auto pSat = pSta.second._satInfos[sys].find(prn);
@@ -607,14 +614,45 @@ bool StecModel::calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid, OUT do
 		}
 		stalist.emplace_back(dist, ion);
 	}
-	if (stalist.size() < 1) {
-		return false;
-	}
+	if (stalist.size() < 1) { return ERROR_VALUE; }
 
 	sort(stalist.begin(), stalist.end());
 	res = modelIDW(stalist, 4, 70000.0, 2);
 
-	return true;
+	return res;
+}
+
+double StecModel::calcRovTecRes(IN string site, IN const double* blh, IN GridInfo& grid, IN StecModSat& dat)
+{
+	double lat = blh[0], lon = blh[1], res = 0.0;
+	StaDistIonArr stalist;
+	stalist.reserve(dat._gridNum);
+
+	for (int i = 1; i <= dat._gridNum; i++) {
+		const auto& onegrid = dat._stecpergrid[i];
+
+		double ion = onegrid._stec;
+		if (fabs(ion - ERROR_VALUE) < DBL_EPSILON) {
+			continue;
+		}
+
+		double dist = _siteGridDist.getDist(i, site);
+		if (dist < 10.0) {
+			dist = 10.0;
+		}
+
+		if (onegrid.isVaild(lat, lon, grid._step[0], grid._step[1])) {
+			stalist.emplace_back(dist, ion);
+		}
+	}
+
+	if (stalist.size() < 1) { return 0.0; }
+	stable_sort(stalist.begin(), stalist.end());
+
+	res = modelIDW(stalist, 4, 999000.0, 2);
+	res = fabs(res - ERROR_VALUE) < DBL_EPSILON ? 0.0 : res;
+
+	return res;
 }
 
 bool StecModel::oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys, IN int prn, IO StecModSat& dat)
@@ -695,9 +733,11 @@ bool StecModel::oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys,
 	dat._gridNum = grid._gridNum;
 	//int nerr = 0;
 	for (int i = 0; i < grid._gridNum; i++) {
-		double res = ERROR_VALUE;
-
-		this->calcGridTecRes(sys, prn, grid._grids[i], res);
+		double res = calcGridTecRes(sys, prn, grid._grids[i]);
+		if (fabs(res - ERROR_VALUE) < DBL_EPSILON) {
+			res = ERROR_VALUE;
+			//nerr++;
+		}
 
 		auto& stecgrid = dat._stecpergrid[i + 1];
 		stecgrid._gridid = i + 1;
@@ -705,13 +745,67 @@ bool StecModel::oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys,
 		stecgrid._lat = grid._grids[i]._lat;
 		stecgrid._lon = grid._grids[i]._lon;
 		stecgrid._rms = 0.0;
-		if (fabs(res - ERROR_VALUE) < DBL_EPSILON) {
-			stecgrid._stec = ERROR_VALUE;
-			//nerr++;
-		}
 		//printf("%c%02d #%02d Res:%8.3f\n", SYS, prn, i + 1, res);
 	}
 	//printf("%02d\n", nerr);
+
+	return true;
+}
+
+bool StecModel::recalculateQI(IN AtmoEpoch& atmo, IN int sys, IN int prn, IN GridInfo& grid, OUT StecModSat& dat)
+{
+	int nbig = 0, nres = 0;
+	double mean_res = 0.0;
+	char SYS = idx2sys(sys);
+
+	vector<double> staRes;
+	staRes.reserve(atmo._staAtmos.size());
+	
+	/* 计算所有格网到所有建模站的残差 */
+	for (auto& pSta : atmo._staAtmos) {
+		const string site = pSta.first;
+		const AtmoSite& atmosta = pSta.second;
+
+		// 跳过问题站
+		Pos pos(atmosta._staInfo._blh[0], atmosta._staInfo._blh[1]);
+		if (find(_badsta.begin(), _badsta.end(), pos) != _badsta.end()) {
+			continue;
+		}
+		// 跳过问题星
+		auto pSat = atmosta._satInfos[sys].find(prn);
+		if (pSat == atmosta._satInfos[sys].end()) {
+			continue;
+		}
+		// 跳过浮点解
+		if (_fixsys[sys] && pSat->second._fixflag != 1) {
+			continue;
+		}
+
+		double dlat = pos._lat - grid._center[0] * D2R;
+		double dlon = pos._lon - grid._center[1] * D2R;
+		double stec = dat._coeff[0] + dat._coeff[1] * dlat + dat._coeff[2] * dlon;
+		double res  = calcRovTecRes(site, atmosta._staInfo._blh, grid, dat);
+		stec += res;
+		double absdiff = fabs(pSat->second._iono - stec);
+
+		double thres = sys == IDX_GLO ? CUT_STEC_RES : 10.0 * CUT_STEC_RES;
+		if (absdiff > thres) {
+			nbig++;
+		}
+		nres++;
+		mean_res += absdiff;
+
+		staRes.emplace_back(absdiff);
+	}
+	if (nres <= 0) { return false; }
+
+	stable_sort(staRes.begin(), staRes.end());
+
+	VecXd V = VecXd::Zero(nres);
+	for (int i = 0; i < nres; i++) {
+		V(i) = staRes[i];
+	}
+	double maxres = V.dot(V);
 
 	return true;
 }
@@ -729,7 +823,6 @@ void StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
 
 		for (const auto& pSat : _satList[isys]) {
 			StecModSat satdata;
-
 			// 单星建模估计系数
 			if (this->oneSatModelEst(atmo, grid, isys, pSat, satdata)) {
 				// 单星建模估计格网残差
@@ -737,6 +830,9 @@ void StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
 					continue;
 				}
 				// 重新计算QI
+				if (_useres && satdata._QI[0] < 13.75) {
+					this->recalculateQI(atmo, isys, pSat, grid, satdata);
+				}
 
 				// 检查建模结果是否连续
 

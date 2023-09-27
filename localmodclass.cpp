@@ -119,11 +119,10 @@ void SiteGridDist::calcAllDist(IN AtmoEpoch& atmo, IN GridInfo& grid)
 		}
 
 		for (int i = 0; i < grid._gridNum; i++) {
-			int id = grid._grids[i]._id;
+			int id      = grid._grids[i]._id;
 			double latG = grid._grids[i]._lat;
 			double lonG = grid._grids[i]._lon;
-			double dist = sphereDist(latG, lonG, latB, lonB);
-			_dist[id][site] = dist;
+			_dist[id][site] = sphereDist(latG, lonG, latB, lonB);
 		}
 	}
 }

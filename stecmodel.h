@@ -37,6 +37,7 @@ public:
 		_stec = _rms = 0.0;		
 	};
 	~StecGrid() {};
+	bool isVaild(IN double lat, IN double lon, IN double dlat, IN double dlon) const;
 
 	int _gridid;	// grid ID
 	double _lon;	// longitude (rad)
@@ -174,8 +175,10 @@ public:
 	int markUnhalthSitesRes(IN int sys, IN int prn, OUT int& nsta);
 	bool estCoeff(IN vector<stecOBS>& obss, IN GridInfo& grid, IN int sys, IN int prn, OUT StecModSat& dat);
 	bool oneSatModelEst(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys, IN int prn, OUT StecModSat& dat);
-	bool calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid, OUT double& res);
+	double calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid);
+	double calcRovTecRes(IN string site, IN const double* blh, IN GridInfo& grid, IN StecModSat& dat);
 	bool oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys, IN int prn, IO StecModSat& dat);
+	bool recalculateQI(IN AtmoEpoch& atmo, IN int sys, IN int prn, IN GridInfo& grid, OUT StecModSat& dat);
 	void satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid);
 
 	/* basic option */
