@@ -294,6 +294,20 @@ public:
 		}
 	}
 	~SiteInfo() {};
+	void operator = (const SiteInfo& src)
+	{
+		this->_name = src._name;
+		this->_ID = src._ID;
+		for (int i = 0; i < 3; i++) {
+			this->_xyz[i] = src._xyz[i];
+			this->_blh[i] = src._blh[i];
+			this->_std_xyz[i] = src._std_xyz[i];
+		}
+		for (int i = 0; i < NUMSYS; i++) {
+			this->_satNum[i] = src._satNum[i];
+			this->_supSys[i] = src._supSys[i];
+		}
+	}
 	void coypSiteSol(IN SiteSol src);
 
 	/* site info*/
@@ -504,6 +518,7 @@ class SiteGridDist
 {
 public:
 	void calcAllDist(IN AtmoEpoch& atmo, IN GridInfo& grid);
+	double getDist(IN int id, IN string site);
 
 	unordered_map<int, SiteDist> _dist;	// gridid->site->dist
 private:

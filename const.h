@@ -103,14 +103,15 @@ using namespace std;
 #define MAX_ITER             10                // max iteration of LSQ
 #define THRES_FIXSOL_PCT     0.5			   // threshold of fix station percentage
 #define THRES_USESTA_PCT     0.5			   // threshold of use station percentage
+#define CUT_STEC_RES         0.5/0.16          // cut stec residual
+#define CUT_DIST             3.0E5             // cut distance from site to grid
+#define ERROR_VALUE          9999.999          // stec error value
 
 
-
-
-const double CUT_DIST     = 300.0 * 1E+3;
+//const double CUT_DIST     = 300.0 * 1E+3;
 const double GRID_STEPN   = 20;
-const double ERROR_VALUE  = 9999.999;
-const double CUT_STEC_RES = (0.5 / 0.16);
+//const double ERROR_VALUE  = 9999.999;
+//const double CUT_STEC_RES = (0.5 / 0.16);
 const double CUT_TECU     = (300.0 / 0.16);
 const double CUT_STD_RES  = 0.3;
 const double CUT_COV_STEC[] = { 0.25, 0.25, 0.25, 0.25 };

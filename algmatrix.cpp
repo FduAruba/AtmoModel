@@ -1,23 +1,6 @@
 #include "algmatrix.h"
 
-double robust(double V, double rms)
-{
-	double k0 = 1.5;
-	double k1 = 3.0;
-	double scale = 1.0;
-
-	double v = fabs(V / rms);
-	if (v > k0 && v <= k1) {
-		scale = (k0 / v) * pow((k1 - v) / (k1 - k0), 2);
-	}
-	else if (v > k1) {
-		scale = 0;
-	}
-
-	return scale;
-}
-
-VecXd wlsq_LU(IN MatXd& A, IN VecXd& b, IN VecXd& W)
+VecXd wlsq_LU(IN MatXd& A, IN VecXd& b, IN VecXd& W, OUT MatXd* Q)
 {
     // 计算加权矩阵和向量
     MatXd AWA = A.transpose() * W.asDiagonal() * A;
@@ -29,5 +12,49 @@ VecXd wlsq_LU(IN MatXd& A, IN VecXd& b, IN VecXd& W)
         x = AWA.lu().solve(AWb);
     }
 
+    // 计算X的协方差矩阵
+    if (Q && Q->rows() == A.cols() && Q->cols() == A.cols()) {
+        Q->resize(A.cols(), A.cols());
+        (*Q) = AWA.inverse();
+    }
+
     return x;
+}
+
+VecXd sliceVecByRate(IN VecXd& V)
+{
+    double vmean, vstd;
+    int rows = V.rows();
+    int nbad = 0, ibeg = 0, iend = 0, idx = 0;
+    vector<double> vec;
+
+    for (int i = 0; i < rows; i++) { vec.push_back(V(i)); }
+    calcMeanStd(vec, vmean, vstd);
+
+    for (int i = 0; i < rows; i++) {
+        if (fabs(vec[i] - vmean) > 3 * vstd) {
+            nbad++;
+        }
+    }
+    if (nbad == 0)    { return V; }
+    if (nbad == rows) { return VecXd(0); }
+
+    stable_sort(vec.begin(), vec.end());
+    for (int i = 0; i < nbad; ++i) {
+        ibeg = i;
+        iend = rows - (nbad - ibeg);
+        if (fabs(vec[ibeg]) < fabs(vec[iend])) {
+            break;
+        }
+        else {
+            ibeg++;
+        }
+    }
+
+    VecXd ret = VecXd::Zero(rows - nbad);
+    for (int i = ibeg; i < iend; i++) {
+        ret(idx++) = vec[i];
+    }
+
+    return ret;
 }

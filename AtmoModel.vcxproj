@@ -145,7 +145,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="algmatrix.h" />
-    <ClInclude Include="atmo.h" />
     <ClInclude Include="commfun.h" />
     <ClInclude Include="comminterface.h" />
     <ClInclude Include="commtime.h" />

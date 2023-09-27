@@ -6,6 +6,7 @@
 #include "algmatrix.h"
 #include "stecroti.h"
 
+/* pos */
 class Pos
 {
 public:
@@ -52,7 +53,7 @@ public:
 		_system = '\0';
 		_sat = 0;
 		for (int i = 0; i < 4; i++) {
-			_coff[i] = _coff_res[i] = 0.0;
+			_coeff[i] = _coeff_rms[i] = 0.0;
 		}
 		for (int i = 0; i < 2; i++) {
 			_QI[i] = 0.0;
@@ -69,8 +70,8 @@ public:
 	int    _sat;						// sat number
 	double _ele;						// elevation (rad)
 	/* coffeicients & residual */
-	double _coff[4];					// coffeicient C00 C01 C10 C11
-	double _coff_res[4];				// coffeicient residual
+	double _coeff[4];					// coeffeicient C00 C01 C10 C11
+	double _coeff_rms[4];				// coeffeicient rms
 	double _QI[2];						// [0]without res [1]with res
 	int    _gridNum;					// grid number
 	map<int, StecGrid> _stecpergrid;	// stec grids
@@ -170,8 +171,11 @@ public:
 	bool checkSatStatus(IN AtmoEpoch& atmo, IN int sys, IN int prn);
 	bool getStecObs(IN AtmoEpoch& atmo, IN int sys, IN int prn, OUT vector<stecOBS>& obss);
 	int markUnhalthSites(IO vector<stecOBS>& obss);
+	int markUnhalthSitesRes(IN int sys, IN int prn, OUT int& nsta);
 	bool estCoeff(IN vector<stecOBS>& obss, IN GridInfo& grid, IN int sys, IN int prn, OUT StecModSat& dat);
 	bool oneSatModelEst(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys, IN int prn, OUT StecModSat& dat);
+	bool calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid, OUT double& res);
+	bool oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys, IN int prn, IO StecModSat& dat);
 	void satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid);
 
 	/* basic option */

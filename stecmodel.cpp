@@ -7,7 +7,7 @@ void StecModSat::reset()
 	_system = '\0';
 	_sat = 0;
 	for (int i = 0; i < 4; i++) {
-		_coff[i] = _coff_res[i] = 0.0;
+		_coeff[i] = _coeff_rms[i] = 0.0;
 	}
 	for (int i = 0; i < 2; i++) {
 		_QI[i] = 0.0;
@@ -333,9 +333,7 @@ int StecModel::markUnhalthSites(IO vector<stecOBS>& obss)
 	do {
 		nbad[1] = nbad[0];
 		
-		for (auto& pOBS : obss) {
-			dat.push_back(pOBS._stec);
-		}
+		for (auto& pOBS : obss) { dat.push_back(pOBS._stec); }
 		calcMeanStd(dat, vmean, vrms);
 
 		for (auto it = obss.begin(); it != obss.end();) {
@@ -357,14 +355,77 @@ int StecModel::markUnhalthSites(IO vector<stecOBS>& obss)
 	return nbad[0];
 }
 
+int StecModel::markUnhalthSitesRes(IN int sys, IN int prn, OUT int& nsta)
+{
+	int nbad[2] = { 0 };
+	double vmean = 0.0, vrms = 0.0;
+	vector<double> dat;
+	vector<double> cleandat;
+
+	do {
+		nsta = 0;
+		nbad[1] = nbad[0];
+
+		// 计算所有站的均值&方差
+		for (const auto& pSta : _stecModRes._staRes) {
+			auto pSat = pSta.second._satInfos[sys].find(prn);
+			if (pSat == pSta.second._satInfos[sys].end()) {
+				continue;
+			}
+			dat.push_back(pSat->second._iono);
+		}
+		calcMeanStd(dat, vmean, vrms);
+
+		// 根据一次方差剔除粗差，重新计算均值&方差
+		for (const auto& pSta : _stecModRes._staRes) {
+			auto pSat = pSta.second._satInfos[sys].find(prn);
+			if (pSat == pSta.second._satInfos[sys].end()) {
+				continue;
+			}
+			if (fabs(pSat->second._iono - vmean) >= 2.0 * vrms) {
+				continue;
+			}
+			cleandat.push_back(pSat->second._iono);
+		};
+		calcMeanStd(cleandat, vmean, vrms);
+
+		// 根据二次方差剔除粗差站点
+		for (auto& pSta : _stecModRes._staRes) {
+			Pos pos(pSta.second._staInfo._blh[0], pSta.second._staInfo._blh[1]);
+			auto pSat = pSta.second._satInfos[sys].find(prn);
+			if (pSat == pSta.second._satInfos[sys].end()) {
+				continue;
+			}
+
+			double diff = fabs(pSat->second._iono - vmean);
+			if (diff > 1.0 && diff > 3.0 * vrms) {
+				_badsta.push_back(pos);
+				nbad[0]++;
+				pSta.second._satInfos[sys].erase(prn);
+			}
+			else {
+				nsta++;
+			}
+		}
+	} while (nbad[0] > nbad[1]);
+
+	return nbad[0];
+}
+
 bool StecModel::estCoeff(IN vector<stecOBS>& obss, IN GridInfo& grid, IN int sys, IN int prn, OUT StecModSat& dat)
 {
+	int nobs = 0;
+	double rms = 0.0, rmsmax = 0.0;
+	double coeff[STECNX] = { 0.0 }, coeff_rms[STECNX] = { 0.0 };
+	VecXd* Y = NULL, * P = NULL, * V = NULL;
+	VecXd* X = NULL, * dx = NULL;
+	MatXd* H = NULL, * Q = NULL;
+	
 	dat.reset();
 
-	int nobs = 0;
-	VecXd* Y = new VecXd(MAX_STEC_OBS);
-	VecXd* P = new VecXd(MAX_STEC_OBS);
-	MatXd* H = new MatXd(MAX_STEC_OBS, STECNX);
+	Y = new VecXd(MAX_STEC_OBS);
+	P = new VecXd(MAX_STEC_OBS);
+	H = new MatXd(MAX_STEC_OBS, STECNX);
 	Y->setZero(); P->setZero(); H->setZero();
 
 	/* 1.矩阵构建 */
@@ -388,52 +449,94 @@ bool StecModel::estCoeff(IN vector<stecOBS>& obss, IN GridInfo& grid, IN int sys
 		(*H)(nobs, 2) = dlon;
 		nobs++;
 	}
+
 	Y->conservativeResize(nobs);
 	P->conservativeResize(nobs);
 	H->conservativeResize(nobs, STECNX);
 
-	//for (int i = 0; i < nobs; i++) {
-	//	//printf("%8.3f", (*Y)(i, 0));
-	//	/*for (int j = 0; j < 3; j++) {
-	//		printf("%8.3f", (*H)(i, j));
-	//	}*/
-	//	/*for (int j = 0; j < nobs; j++) {
-	//		printf("%4.1f", (*P)(i, j));
-	//	}*/
-	//	printf("\n");
-	//}
-
-	/* 2.最小二乘 */
-	double rms = 0.0, rmsmax = 0.0;
-	VecXd* V  = new VecXd(nobs);
-	VecXd* X  = new VecXd(STECNX);
-	VecXd* dx = new VecXd(STECNX);
-	V->setZero(); X->setZero(); dx->setZero();
+	/* 2.最小二乘求解系数 */
+	V  = new VecXd(nobs);
+	X  = new VecXd(STECNX);
+	dx = new VecXd(STECNX);
+	Q  = new MatXd(STECNX, STECNX);
+	V->setZero(); X->setZero(); dx->setZero(); Q->setZero();
 
 	(*V) = (*Y) - (*H) * (*X);
 	for (int i = 0; i < MAX_ITER; i++) {
 		// 最小二乘
-		(*dx) = wlsq_LU(*H, *V, *P);
+		(*dx) = wlsq_LU(*H, *V, *P, Q);
 		(*X) += (*dx);
 		(*V) = (*Y) - (*H) * (*X);
-		// 更新权重矩阵
+
+		// 更新权重
 		rmsmax = (*V).transpose() * (*V);
 		rms = sqrt(rmsmax / (nobs - STECNX));
 		for (int j = 0; j < nobs; j++) {
 			(*P)(j) *= robust((*V)(j) * sqrt((*P)(j)), rms);
 		}
+
 		// 残差判定
-		if ((*dx).transpose() * (*dx) < 1.0e-4) {
+		if ((*dx).transpose() * (*dx) < 1.0E-3) {
 			break;
 		}
 	}
 
+	if (Q->cols() != STECNX || fabs((*X)(0)) > 200.0) {
+		Y->resize(0); P->resize(0); V->resize(0);
+		X->resize(0); dx->resize(0);
+		H->resize(0, 0); Q->resize(0, 0);
+		delete Y; delete P; delete V;
+		delete X; delete dx; delete H; delete Q;
+		return false;
+	}
+
 	/* 3.更新rms */
+	VecXd V2 = sliceVecByRate(*V);
+	rmsmax = V2.transpose() * V2;
+	nobs = (int)V2.rows();
+	rms = sqrt(rmsmax / (nobs - STECNX));
+
+	vector<double> arr;
+	for (int i = 0; i < V->rows(); i++) {
+		arr.push_back((*V)(i));
+	}
+	stable_sort(arr.begin(), arr.end());
+
+	if (_qi_multi > 0.9) {
+		int idx = (int)(arr.size() * _qi_multi);
+		if (idx > 0 && idx < arr.size()) {
+			rms = arr[idx - 1];
+		}
+	}
+	rms *= _qi_coeff;
+	rms += _qi_base;
+	rms = rms > 31.51 ? 31.51 : rms;
+
+	for (int i = 0; i < STECNX; i++) {
+		coeff[i] = (*X)(i);
+		coeff_rms[i] = (*Q)(i, i);
+	}
 
 	/* 4.保存建模系数 */
+	dat._system = idx2sys(sys);
+	dat._sat = prn;
+	dat._coeff[0] = coeff[0];
+	dat._coeff[1] = coeff[1];
+	dat._coeff[2] = coeff[2];
+	dat._coeff[3] = 0.0;
+	dat._coeff_rms[0] = coeff_rms[0];
+	dat._coeff_rms[1] = coeff_rms[1];
+	dat._coeff_rms[2] = coeff_rms[2];
+	dat._coeff_rms[3] = 0.0;
+	dat._QI[0] = rms;
+	dat._QI[1] = rms;
 
-	Y->resize(0); P->resize(0); H->resize(0, 0);
-	delete Y; delete P; delete H;
+	Y->resize(0); P->resize(0); V->resize(0);
+	X->resize(0); dx->resize(0); 
+	H->resize(0, 0); Q->resize(0, 0);
+	delete Y; delete P; delete V;
+	delete X; delete dx; delete H; delete Q;
+
 	return true;
 }
 
@@ -466,12 +569,151 @@ bool StecModel::oneSatModelEst(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys
 
 		/* 4.参数估计 */
 		stat = false;
-		if (!estCoeff(obss, grid, sys, prn, dat)) {
+		if (!(stat = estCoeff(obss, grid, sys, prn, dat))) {
 			break;
 		}
 	}
 	
 	return stat;
+}
+
+bool StecModel::calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid, OUT double& res)
+{
+	int ref = _stecModCur._refsat[sys];
+
+	StaDistIonArr stalist;
+	stalist.reserve(_stecModRes._staRes.size());
+	for (const auto& pSta : _stecModRes._staRes) {
+		string site = pSta.first;
+		auto pSat = pSta.second._satInfos[sys].find(prn);
+		if (pSat == pSta.second._satInfos[sys].end()) {
+			continue;
+		}
+		// distance
+		double dist = _siteGridDist.getDist(grid._id, site);
+		if (pSat->second._fixflag != 1 && sys == IDX_GPS) {
+			dist *= 2.0;
+		}
+		if (dist > 0.5 * CUT_DIST) {
+			continue;
+		}
+		if (dist < 10.0) {
+			dist = 10.0;
+		}
+		// iono
+		double ion = pSat->second._iono;
+		if (fabs(ion) < DBL_EPSILON && prn != ref) {
+			continue;
+		}
+		stalist.emplace_back(dist, ion);
+	}
+	if (stalist.size() < 1) {
+		return false;
+	}
+
+	sort(stalist.begin(), stalist.end());
+	res = modelIDW(stalist, 4, 70000.0, 2);
+
+	return true;
+}
+
+bool StecModel::oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys, IN int prn, IO StecModSat& dat)
+{
+	int nres = 0, nbig = 0;
+	int nsta = 0, nbad = 0;
+	double mean_res = 0.0, mean_ele = 0.0;
+	double mean_rot = 0.0, mean_roti = 0.0;
+	double rate = 0.0;
+	char SYS = idx2sys(sys);
+
+	/* 更新站点残差 */
+	for (auto& pSta : atmo._staAtmos) {
+		const string site = pSta.first;
+		const AtmoSite& atmosta = pSta.second;
+
+		// 跳过问题站
+		Pos pos(atmosta._staInfo._blh[0], atmosta._staInfo._blh[1]);
+		if (find(_badsta.begin(), _badsta.end(), pos) != _badsta.end()) {
+			continue;
+		}
+		// 跳过问题星
+		auto pSat = atmosta._satInfos[sys].find(prn);
+		if (pSat == atmosta._satInfos[sys].end()) {
+			continue;
+		}
+		// 跳过浮点解
+		if (_fixsys[sys] && pSat->second._fixflag != 1) {
+			continue;
+		}
+
+		double dlat = pos._lat - grid._center[0] * D2R;
+		double dlon = pos._lon - grid._center[1] * D2R;
+		double stec = dat._coeff[0] + dat._coeff[1] * dlat + dat._coeff[2] * dlon;
+		double diff = pSat->second._iono - stec;
+
+		auto& sta_res = _stecModRes._staRes[site];
+		sta_res._staInfo = pSta.second._staInfo;
+		sta_res._satInfos[sys][prn]._iono = diff;
+		sta_res._satInfos[sys][prn]._fixflag = pSat->second._fixflag;
+
+		double thres = sys == IDX_GLO ? CUT_STEC_RES : 10.0 * CUT_STEC_RES;
+		if (fabs(diff) > thres) {
+			nbig++;
+		}
+		mean_res += fabs(diff);
+		nres++;
+		//printf("%s %c%02d %6.2f\n", site.c_str(), SYS, prn, diff);
+		mean_ele  += pSat->second._azel[1];
+		mean_rot  += pSat->second._rot;
+		mean_roti += pSat->second._quality;
+	}
+	if (nres <= 0) { return false; }
+	//printf("%d\n", nres);
+	mean_ele  /= nres;
+	mean_rot  /= nres;
+	mean_roti /= nres;
+	dat._ele = mean_ele;
+
+	/* 粗差筛除 */
+	nbad = markUnhalthSitesRes(sys, prn, nsta);
+
+	rate = 1.0 * nbig / nsta;
+	if (rate > 0.3) { // 粗差率
+		dat._QI[0] = dat._QI[1] = 31.51;
+	}
+	rate = 1.0 * nres / atmo._staAtmos.size();
+	if (rate <= 0.2) { // 站点率
+		dat._QI[0] = dat._QI[1] = 31.51; 
+	}
+	dat._ele = mean_ele;
+	if (mean_ele < _minel * D2R) {
+		printf("LOW EL: %c%02d %5.2f(deg)\n", SYS, prn, mean_ele * R2D);
+		return false;
+	}
+
+	/* 保存数据 */
+	dat._gridNum = grid._gridNum;
+	//int nerr = 0;
+	for (int i = 0; i < grid._gridNum; i++) {
+		double res = ERROR_VALUE;
+
+		this->calcGridTecRes(sys, prn, grid._grids[i], res);
+
+		auto& stecgrid = dat._stecpergrid[i + 1];
+		stecgrid._gridid = i + 1;
+		stecgrid._stec = res;
+		stecgrid._lat = grid._grids[i]._lat;
+		stecgrid._lon = grid._grids[i]._lon;
+		stecgrid._rms = 0.0;
+		if (fabs(res - ERROR_VALUE) < DBL_EPSILON) {
+			stecgrid._stec = ERROR_VALUE;
+			//nerr++;
+		}
+		//printf("%c%02d #%02d Res:%8.3f\n", SYS, prn, i + 1, res);
+	}
+	//printf("%02d\n", nerr);
+
+	return true;
 }
 
 void StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
@@ -489,13 +731,18 @@ void StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
 			StecModSat satdata;
 
 			// 单星建模估计系数
-			oneSatModelEst(atmo, grid, isys, pSat, satdata);
+			if (this->oneSatModelEst(atmo, grid, isys, pSat, satdata)) {
+				// 单星建模估计格网残差
+				if (!this->oneSatStecRes(atmo, grid, isys, pSat, satdata)) {
+					continue;
+				}
+				// 重新计算QI
 
-			// 单星建模估计格网残差
+				// 检查建模结果是否连续
 
-			// 检查建模结果是否连续
+				// 插入最新历元建模结果
 
-			// 插入最新历元建模结果
+			}
 		}
 	}
 

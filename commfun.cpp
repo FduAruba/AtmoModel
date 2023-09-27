@@ -1,5 +1,6 @@
 #include "commfun.h"
 
+/* string */
 extern void modifyPath(IO char* src)
 {
 	trimSpace(src);
@@ -51,7 +52,24 @@ extern void cutSep(IO char* str)
 	}
 }
 
+extern double str2num(IN char* s, IN int i, IN int n)
+{
+	double value;
+	char str[256];
+	char* p = str;
 
+	if ((i < 0) || ((int)strlen(s) < i) || ((int)sizeof(str) - 1 < n)) {
+		return 0.0;
+	}
+	for (s += i; *s && --n >= 0; s++) {
+		*p++ = (*s == 'd' || *s == 'D') ? 'E' : *s;
+	}
+	*p = '\0';
+	if (sscanf_s(str, "%lf", &value) == 1) { return value; }
+	else { return 0.0; }
+}
+
+/* position */
 extern void pos2ecef(IN double* pos, OUT double* r)
 {
 	double sinp = sin(pos[0]), cosp = cos(pos[0]), sinl = sin(pos[1]), cosl = cos(pos[1]);
@@ -74,7 +92,7 @@ extern double sphereDist(IN double latG, IN double lonG, IN double latB, IN doub
 	}
 }
 
-
+/* sat system */
 extern bool checksys(IN char s)
 {
 	char sys[] = "GREC";
@@ -241,7 +259,7 @@ extern int satid2idx(IN char code, IN int num) {
 	return idx;
 }
 
-
+/* gps time */
 extern string strtime(IN Gtime t, IN int opt)
 {
 	char buff[64] = { '\0' };
@@ -271,24 +289,7 @@ extern void time2str(IN Gtime t, IN char* s, IN int opt)
 	}
 }
 
-extern double str2num(IN char* s, IN int i, IN int n)
-{
-	double value;
-	char str[256];
-	char* p = str;
-
-	if ((i < 0) || ((int)strlen(s) < i) || ((int)sizeof(str) - 1 < n)) {
-		return 0.0;
-	}
-	for (s += i; *s && --n >= 0; s++) {
-		*p++ = (*s == 'd' || *s == 'D') ? 'E' : *s;
-	}
-	*p = '\0';
-	if (sscanf_s(str, "%lf", &value) == 1) { return value; }
-	else { return 0.0; }
-}
-
-
+/* math */
 extern void calcMeanStd(IN vector<double> data, OUT double& vmean, OUT double& vstd)
 {
 	vmean = vstd = 0.0;
@@ -304,4 +305,46 @@ extern void calcMeanStd(IN vector<double> data, OUT double& vmean, OUT double& v
 		}
 		vstd = sqrt(var / n);
 	}
+}
+
+extern double robust(IN double V, OUT double rms)
+{
+	double k0 = 1.5;
+	double k1 = 3.0;
+	double scale = 1.0;
+
+	double v = fabs(V / rms);
+	if (v > k0 && v <= k1) {
+		scale = (k0 / v) * pow((k1 - v) / (k1 - k0), 2);
+	}
+	else if (v > k1) {
+		scale = 0;
+	}
+
+	return scale;
+}
+
+extern double modelIDW(IN StaDistIonArr& list, IN int nused, IN double maxdist, IN int k)
+{
+	int cnt = 0;
+	double sumwgt = 0.0, stawgt[MAXSTA] = { 0.0 };
+	double res = 0.0;
+
+	for (auto& p : list) {
+		if (cnt >= nused || p.dist > maxdist) {
+			break;
+		}
+
+		stawgt[cnt] = pow(100.0 / p.dist, k);
+		sumwgt += stawgt[cnt];
+		cnt++;
+	}
+
+	if (cnt < 1) { return ERROR_VALUE; }
+
+	for (int i = 0; i < cnt; i++) {
+		res += stawgt[i] / sumwgt * list[i].ion;
+	}
+
+	return res;
 }

@@ -227,7 +227,8 @@ void LocalAtmoModel::findRefSat(IN int isys, IN map<int, EleStation>* numstas, I
 					pctnew = (1.0 * pnew->second._num) / stanum;
 					//TODO: rotÅÐ¶¨
 					if (pctnew - pctold > 0.1 || pold->second._el < 40.0 * D2R) {
-						if (modLastEpoch != NULL && modLastEpoch->_stecmodgnss[isys].find(prn) != modLastEpoch->_stecmodgnss[isys].end()) {
+						if (modLastEpoch != NULL && 
+							modLastEpoch->_stecmodgnss[isys].find(prn) != modLastEpoch->_stecmodgnss[isys].end()) {
 							refsat[isys] = prn;
 							isfind = true;
 						}

@@ -127,3 +127,15 @@ void SiteGridDist::calcAllDist(IN AtmoEpoch& atmo, IN GridInfo& grid)
 		}
 	}
 }
+
+double SiteGridDist::getDist(IN int id, IN string site)
+{
+	auto it = _dist.find(id);
+	if (it != _dist.end()) {
+		auto it_site = it->second.find(site);
+		if (it_site != it->second.end()) {
+			return it_site->second;
+		}
+	}
+	return 0.0;
+}
