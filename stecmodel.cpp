@@ -714,7 +714,6 @@ bool StecModel::oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys,
 
 	/* 粗差筛除 */
 	nbad = markUnhalthSitesRes(sys, prn, nsta);
-
 	rate = 1.0 * nbig / nsta;
 	if (rate > 0.3) { // 粗差率
 		dat._QI[0] = dat._QI[1] = 31.51;
@@ -724,8 +723,8 @@ bool StecModel::oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys,
 		dat._QI[0] = dat._QI[1] = 31.51; 
 	}
 	dat._ele = mean_ele;
-	if (mean_ele < _minel * D2R) {
-		printf("LOW EL: %c%02d %5.2f(deg)\n", SYS, prn, mean_ele * R2D);
+	if (mean_ele < _minel * D2R) { // 高度角
+		//printf("LOW EL: %c%02d %5.2f(deg)\n", SYS, prn, mean_ele * R2D);
 		return false;
 	}
 
@@ -755,7 +754,9 @@ bool StecModel::oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys,
 bool StecModel::recalculateQI(IN AtmoEpoch& atmo, IN int sys, IN int prn, IN GridInfo& grid, OUT StecModSat& dat)
 {
 	int nbig = 0, nres = 0;
-	double mean_res = 0.0;
+	double mean_res = 0.0, max_res = 0.0;
+	double res = 0.0, rate = 0.0;
+	VecXd V = VecXd::Zero(0);
 	char SYS = idx2sys(sys);
 
 	vector<double> staRes;
@@ -799,13 +800,56 @@ bool StecModel::recalculateQI(IN AtmoEpoch& atmo, IN int sys, IN int prn, IN Gri
 	}
 	if (nres <= 0) { return false; }
 
+	/* 更新QI */
 	stable_sort(staRes.begin(), staRes.end());
-
-	VecXd V = VecXd::Zero(nres);
+	V = VecXd::Zero(nres);
 	for (int i = 0; i < nres; i++) {
 		V(i) = staRes[i];
 	}
-	double maxres = V.dot(V);
+	max_res = V.dot(V);
+
+	rate = 1.0 * nbig / nres;
+	if (rate > 0.3) {
+		dat._QI[1] = 31.51;
+		return true;
+	}
+
+	rate = 1.0 * nres / atmo._staAtmos.size();
+	if (rate > 0.2) {
+		res = sqrt(max_res / (nres - STECNX));
+		if (_qi_multi > 0.9) {
+			int idx = (int)(nres * _qi_multi);
+			if (idx > 0 && idx < nres) {
+				res = staRes[idx];
+			}
+		}
+		res *= _qi_coeff;
+		res += _qi_base;
+		res = res > 31.51 ? 31.51 : res;
+	}
+	else {
+		res = 31.51;
+	}
+	dat._QI[1] = res;
+	return true;
+}
+
+bool StecModel::checkSatContinuous(IN Gtime tnow, IN int sys, IN int prn, IN int ref, IN GridInfo& grid, IN StecModSat& dat)
+{
+	bool isfind = false;
+	Gtime tpre = { 0 };
+	const StecModSat* pre_sat = NULL;
+	const StecModSat* pre_ref = NULL;
+
+	if (dat._stecpergrid.empty()) {
+		return false;
+	}
+
+	/* 1.遍历卫星建模结果(时间倒序)，查找在规定时间阈值之内是否有当前卫星&参考星，若均存在则返回true */
+
+
+
+	/* 2.若无法找到(时间非连续)，遍历格网点 */
 
 	return true;
 }
@@ -823,8 +867,10 @@ void StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
 
 		for (const auto& pSat : _satList[isys]) {
 			StecModSat satdata;
+
 			// 单星建模估计系数
 			if (this->oneSatModelEst(atmo, grid, isys, pSat, satdata)) {
+
 				// 单星建模估计格网残差
 				if (!this->oneSatStecRes(atmo, grid, isys, pSat, satdata)) {
 					continue;
@@ -836,7 +882,7 @@ void StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
 
 				// 检查建模结果是否连续
 
-				// 插入最新历元建模结果
+				// 插入当前历元系统建模结果
 
 			}
 		}
