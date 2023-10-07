@@ -6,7 +6,7 @@ using namespace std;
 
 int main()
 {
-	char fname[MAXCHARS] = "C:\\Users\\QHY\\Desktop\\rsim.cfg";
+	char fname[MAXCHARS] = "C:\\Users\\shuqh\\Desktop\\rsim.cfg";
 	Coption config;									// 配置文件
 	ProOption* popt          = new ProOption;		// 处理设置
 	GridInfo* grid           = new GridInfo;		// 格网点信息

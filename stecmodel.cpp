@@ -1,6 +1,6 @@
 #include "stecmodel.h"
 
-#define		THRESHOLD_MAX_EXPAND_TIME	(120.0)
+#define		THRESHOLD_MAX_EXPAND_TIME	(120.0)		// threshold of max expand time(s)
 
 bool StecGrid::isVaild(IN double lat, IN double lon, IN double dlat, IN double dlon) const
 {
@@ -214,7 +214,7 @@ const StecModEpoch* StecModel::StecModInLastEpoch()
 void StecModel::initStecMod(IN AtmoEpoch& atmo)
 {
 	/* GLONASS不历元初始化 */
-	if ((_cursys & SYS_GLO) && _stecModRes._stanum > 0) {
+	if ((_cursys & SYS_GLO) && (_stecModRes._stanum > 0)) {
 		return;
 	}
 
@@ -785,7 +785,7 @@ bool StecModel::recalculateQI(IN AtmoEpoch& atmo, IN int sys, IN int prn, IN Gri
 		double dlat = pos._lat - grid._center[0] * D2R;
 		double dlon = pos._lon - grid._center[1] * D2R;
 		double stec = dat._coeff[0] + dat._coeff[1] * dlat + dat._coeff[2] * dlon;
-		double res  = calcRovTecRes(site, atmosta._staInfo._blh, grid, dat);
+		res  = calcRovTecRes(site, atmosta._staInfo._blh, grid, dat);
 		stec += res;
 		double absdiff = fabs(pSat->second._iono - stec);
 
@@ -846,10 +846,27 @@ bool StecModel::checkSatContinuous(IN Gtime tnow, IN int sys, IN int prn, IN int
 	}
 
 	/* 1.遍历卫星建模结果(时间倒序)，查找在规定时间阈值之内是否有当前卫星&参考星，若均存在则返回true */
+	for (auto pMod = _stecModList.rbegin(); pMod != _stecModList.rend(); ++pMod) {
+		tpre = pMod->first;
+		if (tnow - tpre > THRESHOLD_MAX_EXPAND_TIME) {
+			break;
+		}
 
-
+		auto pSat = pMod->second._stecmodgnss[sys].find(prn);
+		auto pRef = pMod->second._stecmodgnss[sys].find(ref);
+		if (pSat != pMod->second._stecmodgnss[sys].end() && 
+			pRef != pMod->second._stecmodgnss[sys].end()) {
+			pre_sat = &pSat->second;
+			pre_ref = &pRef->second;
+			isfind = true;
+			break;
+		}
+	}
+	if (isfind == false) { return true; }
 
 	/* 2.若无法找到(时间非连续)，遍历格网点 */
+
+
 
 	return true;
 }
