@@ -22,6 +22,7 @@ void StecModSat::reset()
 	_gridNum = 0;
 	_satreslevel = 0;
 	_ele = 0.0;
+	_nsta = 0;
 	_stecpergrid.clear();
 }
 
@@ -580,6 +581,8 @@ bool StecModel::oneSatModelEst(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys
 			break;
 		}
 	}
+
+	dat._nsta = stat == true ? obss.size() : 0;
 	
 	return stat;
 }
@@ -839,7 +842,9 @@ bool StecModel::recalculateQI(IN AtmoEpoch& atmo, IN int sys, IN int prn, IN Gri
 void StecModel::satModAndRes(IN int id, IN double dlat, IN double dlon, IN const StecModSat& satdat, OUT double& stec, OUT double& res)
 {
 	stec = res = 0.0;
+	// model stec
 	stec = satdat._coeff[0] + satdat._coeff[1] * dlat + satdat._coeff[2] * dlon;
+	// resduial stec
 	auto it = satdat._stecpergrid.find(id);
 	if (it != satdat._stecpergrid.end()) {
 		res = it->second._stec;
@@ -855,6 +860,7 @@ bool StecModel::checkSatContinuous(IN Gtime tnow, IN int sys, IN int prn, IN int
 	int ngood = 0, nall = 0;
 	double rate = 0.0;
 	char SYS = idx2sys(sys);
+	string tstr = strtime(tnow, 2);
 
 	if (dat._stecpergrid.empty()) {
 		return false;
@@ -879,23 +885,23 @@ bool StecModel::checkSatContinuous(IN Gtime tnow, IN int sys, IN int prn, IN int
 	}
 	if (isfind == false) { return true; }
 
-	/* 2.若无法找到(时间非连续)，遍历格网点 */
-	for (const auto& pid : grid._grids) {
+	/* 2.遍历格网点 */
+	for (int i = 0; i < grid._gridNum; i++) {
 		// 格网点经纬度
-		double dlat = pid._lat - grid._center[0] * D2R;
-		double dlon = pid._lon - grid._center[1] * D2R;
+		double dlat = grid._grids[i]._lat - grid._center[0] * D2R;
+		double dlon = grid._grids[i]._lon - grid._center[1] * D2R;
 		// 当前历元的格网点[非参考星]stec残差
 		double stec_new_sat = 0.0;
 		double stec_new_sat_res = 0.0;
-		satModAndRes(pid._id, dlat, dlon, dat, stec_new_sat, stec_new_sat_res);
+		satModAndRes(i + 1, dlat, dlon, dat, stec_new_sat, stec_new_sat_res);
 		// 最近历元的格网点[非参考星]stec残差
 		double stec_old_sat = 0.0;
 		double stec_old_sat_res = 0.0;
-		satModAndRes(pid._id, dlat, dlon, *pre_sat, stec_old_sat, stec_old_sat_res);
+		satModAndRes(i + 1, dlat, dlon, *pre_sat, stec_old_sat, stec_old_sat_res);
 		// 最近历元的格网点[参考星]stec残差
 		double stec_old_ref = 0.0;
 		double stec_old_ref_res = 0.0;
-		satModAndRes(pid._id, dlat, dlon, *pre_ref, stec_old_ref, stec_old_ref_res);
+		satModAndRes(i + 1, dlat, dlon, *pre_ref, stec_old_ref, stec_old_ref_res);
 		double stec_new = fabs(stec_new_sat_res - ERROR_VALUE) < DBL_EPSILON ? stec_new_sat : 
 			                                                                   stec_new_sat + stec_new_sat_res;
 		double stec_old = fabs(stec_old_sat_res - ERROR_VALUE) < DBL_EPSILON ? stec_old_sat - stec_old_ref : 
@@ -910,10 +916,12 @@ bool StecModel::checkSatContinuous(IN Gtime tnow, IN int sys, IN int prn, IN int
 			nall++;
 			continue;
 		}
+		printf("%s %02d %c%02d %6.2f\n", tstr.c_str(), i + 1, SYS, prn, fabs(stec_new - stec_old));
 		ngood++; nall++;
 	}
 
 	rate = (1.0 * ngood) / (1.0 * nall);
+	printf("%s %c%02d %6.2f%%\n", tstr.c_str(), SYS, prn, rate * 100);
 	if (rate < THRESHOLD_SUCCESS_GRID) {
 		return false;
 	}

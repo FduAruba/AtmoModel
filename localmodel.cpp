@@ -20,6 +20,14 @@ bool LocalAtmoModel::setRefSites(IN SiteAtmos& stas)
 	for (auto pSta : stas) {
 		int id = pSta.first;
 
+		if (pSta.second._blh[0] * R2D < _gridinfo._latcell[0] ||
+			pSta.second._blh[0] * R2D > _gridinfo._latcell[1] ||
+			pSta.second._blh[1] * R2D < _gridinfo._loncell[0] ||
+			pSta.second._blh[1] * R2D > _gridinfo._loncell[1]) {
+			printf("%s %8.2f%8.2f\n", pSta.second._name.c_str(), pSta.second._blh[0] * R2D, pSta.second._blh[1] * R2D);
+			continue;
+		}
+
 		if (_allsites.find(id) != _allsites.end()) {
 			for (int i = 0; i < NUMSYS; i++) {
 				if (pSta.second._satIon[i].size() > 0) {

@@ -62,6 +62,7 @@ public:
 		_gridNum = 0;
 		_satreslevel = 0;
 		_ele = 0.0;
+		_nsta = 0;
 	}
 	~StecModSat() {};
 	void reset();
@@ -70,6 +71,7 @@ public:
 	char   _system;						// system captial GREC
 	int    _sat;						// sat number
 	double _ele;						// elevation (rad)
+	int    _nsta;
 	/* coffeicients & residual */
 	double _coeff[4];					// coeffeicient C00 C01 C10 C11
 	double _coeff_rms[4];				// coeffeicient rms

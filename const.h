@@ -27,7 +27,7 @@ using namespace std;
 #endif
 
 /* math ---------------------------------------------------------------------------*/
-#define PI			4.0*atan(1.0)		    // phi
+#define PI			(4.0*atan(1.0))		    // phi
 #define D2R         (PI/180.0)              // deg to rad
 #define R2D         (180.0/PI)              // rad to deg
 #define MIN(a,b)    (((a)>(b))?(b):(a))     // select smaller
