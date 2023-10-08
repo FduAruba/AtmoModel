@@ -487,6 +487,7 @@ bool LocalAtmoModel::doStecMod(IN Gtime tnow, IN AtmoInfo& stecinf, OUT ProStecM
 	/* 2.STEC建模 */
 	if (_stanumGEC > 0) { doStecModSys(0); }
 	if (_stanumR   > 0) { doStecModSys(1); }
+	_stecPro.addStecMod(tnow);
 
 	/* 3.若采用浮点/固定解混合建模，BD2重新选择QI最小的卫星作为参考星 */
 

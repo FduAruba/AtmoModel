@@ -1,6 +1,8 @@
 #include "stecmodel.h"
 
 #define		THRESHOLD_MAX_EXPAND_TIME	(120.0)		// threshold of max expand time(s)
+#define		THRESHOLD_MODEL_CONTINUOUS	(1.0)		/*modified by wdh, change from 0.4 to 1.0, 20191016 */
+#define		THRESHOLD_SUCCESS_GRID		(0.9)		/*modified by wdh, change from 0.8 to 0.9, 20191016 */
 
 bool StecGrid::isVaild(IN double lat, IN double lon, IN double dlat, IN double dlon) const
 {
@@ -834,12 +836,25 @@ bool StecModel::recalculateQI(IN AtmoEpoch& atmo, IN int sys, IN int prn, IN Gri
 	return true;
 }
 
+void StecModel::satModAndRes(IN int id, IN double dlat, IN double dlon, IN const StecModSat& satdat, OUT double& stec, OUT double& res)
+{
+	stec = res = 0.0;
+	stec = satdat._coeff[0] + satdat._coeff[1] * dlat + satdat._coeff[2] * dlon;
+	auto it = satdat._stecpergrid.find(id);
+	if (it != satdat._stecpergrid.end()) {
+		res = it->second._stec;
+	}
+}
+
 bool StecModel::checkSatContinuous(IN Gtime tnow, IN int sys, IN int prn, IN int ref, IN GridInfo& grid, IN StecModSat& dat)
 {
 	bool isfind = false;
 	Gtime tpre = { 0 };
 	const StecModSat* pre_sat = NULL;
 	const StecModSat* pre_ref = NULL;
+	int ngood = 0, nall = 0;
+	double rate = 0.0;
+	char SYS = idx2sys(sys);
 
 	if (dat._stecpergrid.empty()) {
 		return false;
@@ -865,10 +880,57 @@ bool StecModel::checkSatContinuous(IN Gtime tnow, IN int sys, IN int prn, IN int
 	if (isfind == false) { return true; }
 
 	/* 2.若无法找到(时间非连续)，遍历格网点 */
+	for (const auto& pid : grid._grids) {
+		// 格网点经纬度
+		double dlat = pid._lat - grid._center[0] * D2R;
+		double dlon = pid._lon - grid._center[1] * D2R;
+		// 当前历元的格网点[非参考星]stec残差
+		double stec_new_sat = 0.0;
+		double stec_new_sat_res = 0.0;
+		satModAndRes(pid._id, dlat, dlon, dat, stec_new_sat, stec_new_sat_res);
+		// 最近历元的格网点[非参考星]stec残差
+		double stec_old_sat = 0.0;
+		double stec_old_sat_res = 0.0;
+		satModAndRes(pid._id, dlat, dlon, *pre_sat, stec_old_sat, stec_old_sat_res);
+		// 最近历元的格网点[参考星]stec残差
+		double stec_old_ref = 0.0;
+		double stec_old_ref_res = 0.0;
+		satModAndRes(pid._id, dlat, dlon, *pre_ref, stec_old_ref, stec_old_ref_res);
+		double stec_new = fabs(stec_new_sat_res - ERROR_VALUE) < DBL_EPSILON ? stec_new_sat : 
+			                                                                   stec_new_sat + stec_new_sat_res;
+		double stec_old = fabs(stec_old_sat_res - ERROR_VALUE) < DBL_EPSILON ? stec_old_sat - stec_old_ref : 
+			                                                                   stec_old_sat + stec_old_sat_res - stec_old_ref - stec_old_ref_res;
+		if (fabs(stec_new_sat_res - ERROR_VALUE) < DBL_EPSILON ||
+			fabs(stec_old_sat_res - ERROR_VALUE) < DBL_EPSILON ||
+			fabs(stec_old_ref_res - ERROR_VALUE) < DBL_EPSILON) {
+			nall++;
+			continue;
+		}
+		if (fabs(stec_new - stec_old) > THRESHOLD_MODEL_CONTINUOUS) {
+			nall++;
+			continue;
+		}
+		ngood++; nall++;
+	}
 
-
+	rate = (1.0 * ngood) / (1.0 * nall);
+	if (rate < THRESHOLD_SUCCESS_GRID) {
+		return false;
+	}
 
 	return true;
+}
+
+void StecModel::addStecMod(IN Gtime tnow)
+{
+	for (auto pMod = _stecModList.begin(); pMod != _stecModList.end();) {
+		if (_stecModList.size() >= 5 || tnow - pMod->first >= THRESHOLD_MAX_EXPAND_TIME) {
+			pMod = _stecModList.erase(pMod);
+			continue;
+		}
+		pMod++;
+	}
+	_stecModList.emplace(tnow, _stecModCur);
 }
 
 void StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
@@ -896,12 +958,18 @@ void StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
 				if (_useres && satdata._QI[0] < 13.75) {
 					this->recalculateQI(atmo, isys, pSat, grid, satdata);
 				}
-
 				// 检查建模结果是否连续
-
+				bool ifcont = checkSatContinuous(atmo._time, isys, pSat, atmo._refSat[isys], grid, satdata);
 				// 插入当前历元系统建模结果
-
+				if (satdata._sat != 0) {
+					_stecModCur._stecmodgnss[isys].emplace(pSat, satdata);
+					_stecModCur._satNum[isys] += 1;
+				}
 			}
+		}
+
+		if (_stecModCur._satNum[isys] == 1) {
+			_stecModCur._satNum[isys] = 0;
 		}
 	}
 
