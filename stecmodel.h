@@ -184,6 +184,7 @@ public:
 	void satModAndRes(IN int id, IN double dlat, IN double dlon, IN const StecModSat& satdat, OUT double& stec, OUT double& res);
 	bool checkSatContinuous(IN Gtime tnow, IN int sys, IN int prn, IN int ref, IN GridInfo& grid, IN StecModSat& dat);
 	void addStecMod(IN Gtime tnow);
+	void refSatSmoothing(IN Gtime tnow);
 	void satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid);
 
 	/* basic option */

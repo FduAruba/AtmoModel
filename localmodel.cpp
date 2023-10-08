@@ -256,7 +256,7 @@ void LocalAtmoModel::findRefSat(IN int isys, IN map<int, EleStation>* numstas, I
 	}
 }
 
-void  LocalAtmoModel::uniformDatum(IN Gtime tnow, IN int* refsat, IN int symbol)
+void LocalAtmoModel::uniformDatum(IN Gtime tnow, IN int* refsat, IN int symbol)
 {
 	AtmoEpochs::iterator pAtmo;
 	if (!getAtmoEpoch(tnow, symbol, pAtmo)) {
@@ -322,7 +322,7 @@ void LocalAtmoModel::inputAtmoSat(IN int isys, IN SatSols* src, OUT SatInfos* ds
 		if (_stecPro._fixsys[isys] == 1 && pSat.second._fixflag != 1) {
 			continue;
 		}
-
+		
 		int prn = pSat.first;
 		SatInfo info(pSat.second);
 
@@ -483,6 +483,27 @@ bool LocalAtmoModel::doStecModSys(IN int symbol)
 	return true;
 }
 
+void LocalAtmoModel::setRefSatBD2(IO StecModEpoch& mod)
+{
+	map<double, int> QIlist;
+	
+	if (mod._refsat[IDX_BDS2] > 0) {
+		mod._stecmodgnss[IDX_BDS2].erase(mod._refsat[IDX_BDS2]);
+		mod._satNum[IDX_BDS2] -= 1;
+	}
+
+	for (const auto& pSat : mod._stecmodgnss[IDX_BDS2]) {
+		QIlist.emplace(pSat.second._QI[0], pSat.first);
+	}
+
+	for (auto& pSat : QIlist) {
+		if (pSat.first > 0.0) {
+			mod._refsat[IDX_BDS2] = pSat.second;
+			break;
+		}
+	}
+}
+
 bool LocalAtmoModel::doStecMod(IN Gtime tnow, IN AtmoInfo& stecinf, OUT ProStecMod& stecmod)
 {
 	_stecPro._tnow = tnow;
@@ -495,11 +516,22 @@ bool LocalAtmoModel::doStecMod(IN Gtime tnow, IN AtmoInfo& stecinf, OUT ProStecM
 	/* 2.STEC建模 */
 	if (_stanumGEC > 0) { doStecModSys(0); }
 	if (_stanumR   > 0) { doStecModSys(1); }
+
+	/* 3.参考星平滑 */
+	if (_stecPro._refsatsmooth) {
+		_stecPro.refSatSmoothing(tnow);
+	}
+
+	/* 4.更新历史建模数据 */
 	_stecPro.addStecMod(tnow);
 
-	/* 3.若采用浮点/固定解混合建模，BD2重新选择QI最小的卫星作为参考星 */
+	/* 5.若采用浮点/固定解混合建模，BD2重新选择QI最小的卫星作为参考星 */
+	StecModEpoch stecModNow = _stecPro._stecModCur;
+	if (_proOption._algotype == 0) {
+		setRefSatBD2(stecModNow);
+	}
 
-	/* 4.遍历系统/卫星，保存卫星残差信息 */
+	/* 6.遍历系统/卫星，保存卫星残差信息 */
 
 	return true;
 }

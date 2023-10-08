@@ -31,6 +31,7 @@ public:
 		_maxsatres = 20;
 		_refsatsmooth = 0;
 
+		_algotype = 1;
 		_modeltype = 1;
 		_minel = 15.0;
 		_qimulti = 0.68;
@@ -65,6 +66,7 @@ public:
 	int _maxsatres;				// maximum satellite number use residuals *default: 20
 	int _refsatsmooth;			// reference satellite smooth   [0]no use [1]use *default: 0
 	/* model setting */
+	int _algotype;				// [0]mixed [1]fixed
 	int _modeltype;				// [1]STEC [2]ZTD [4]STD [8]VTEC
 	double _minel;				// minimum elevation angle (deg)
 	double _qimulti;			// QI for muti-system

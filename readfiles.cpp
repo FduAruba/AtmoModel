@@ -219,7 +219,14 @@ static bool configModel(IN FILE* fp, OUT Coption& config)
 			p = strstr(buff, "=");
 			if (p == NULL || (++p) == NULL) { continue; }
 
-			if (strstr(buff, "modeltype")) {
+			if (strstr(buff, "algotype")) {
+				ret = sscanf(p, "%d", &config._algotype);
+				if (ret != 1) {
+					printf("***ERROR: read config algotype fail!\n");
+					return false;
+				}
+			}
+			else if (strstr(buff, "modeltype")) {
 				ret = sscanf(p, "%d", &config._modeltype);
 				if (ret != 1) {
 					printf("***ERROR: read config modeltype fail!\n");
@@ -563,6 +570,8 @@ extern void movOption(IN Coption& config, OUT ProOption& opt)
 	opt._qimulti   = config._qimulti;
 	opt._qibase    = config._qibase;
 	opt._qicoeff   = config._qicoeff;
+	opt._refsatsmooth = config._refsatsmooth;
+	opt._algotype  = config._algotype;
 }
 
 extern bool movGrids(IN Coption& config, OUT GridInfo& grid)

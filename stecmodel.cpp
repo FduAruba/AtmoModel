@@ -33,6 +33,7 @@ void StecModel::setBasicOption(IN ProOption& opt, IN int res)
 	_qi_multi = opt._qimulti;
 	_qi_base  = opt._qibase;
 	_qi_coeff = opt._qicoeff;
+	_refsatsmooth = opt._refsatsmooth;
 	for (int i = 0; i < 5; i++) {
 		_roti[i] = opt._maxroti[i];
 	}
@@ -941,6 +942,76 @@ void StecModel::addStecMod(IN Gtime tnow)
 	_stecModList.emplace(tnow, _stecModCur);
 }
 
+void StecModel::refSatSmoothing(IN Gtime tnow)
+{
+	int ep[6] = { 0.0 };
+	time2epoch(tnow, ep);
+	const StecModSat* preRef = NULL;
+	const StecModSat* curRef = NULL;
+
+	// 0点或12点整点不做平滑
+	if ((ep[3] == 0 || ep[3] == 12) && ep[4] == 0 && ep[5] == 0) {
+		return;
+	}
+	// 获取上个历元建模结果
+	auto pMod = _stecModList.rbegin();
+	if (pMod == _stecModList.rend()) {
+		return;
+	}
+
+	for (int isys = 0; isys < NUMSYS; isys++) {
+		bool isfind = false;
+
+		int ref    = _stecModCur._refsat[isys];
+		auto p_ref = pMod->second._stecmodgnss[isys].find(ref);
+		auto c_ref =  _stecModCur._stecmodgnss[isys].find(ref);
+		if (p_ref != pMod->second._stecmodgnss[isys].end() && 
+			c_ref !=  _stecModCur._stecmodgnss[isys].end()) {
+			preRef = &(p_ref->second);
+			curRef = &(c_ref->second);
+			isfind = true;
+		}
+
+		if (isfind) {
+			// 历元间参考星建模系数差分
+			double dCoeff[STECNX] = { 0 };
+			dCoeff[0] = preRef->_coeff[0] - curRef->_coeff[0];
+			dCoeff[1] = preRef->_coeff[1] - curRef->_coeff[1];
+			dCoeff[2] = preRef->_coeff[2] - curRef->_coeff[2];
+			if (fabs(dCoeff[0]) < DBL_EPSILON) {
+				continue;
+			}
+			// 历元间参考星残差差分
+			double diff = 0.0;
+			map<int, double> gridDiff;
+			for (int i = 1; i <= curRef->_gridNum; i++) {
+				if (fabs(curRef->_stecpergrid.at(i)._stec - ERROR_VALUE) < DBL_EPSILON ||
+					fabs(preRef->_stecpergrid.at(i)._stec - ERROR_VALUE) < DBL_EPSILON) {
+					diff = 0.0;
+				}
+				else {
+					diff = preRef->_stecpergrid.at(i)._stec - curRef->_stecpergrid.at(i)._stec;
+				}
+				gridDiff.emplace(i, diff);
+			}
+			// 当前历元参考星平滑
+			auto pSat = _stecModCur._stecmodgnss[isys].begin();
+			for (; pSat != _stecModCur._stecmodgnss[isys].end(); ++pSat) {
+				pSat->second._coeff[0] += dCoeff[0];
+				pSat->second._coeff[1] += dCoeff[1];
+				pSat->second._coeff[2] += dCoeff[2];
+
+				for (int i = 1; i <= pSat->second._gridNum; i++) {
+					if (fabs(pSat->second._stecpergrid.at(i)._stec - ERROR_VALUE) < DBL_EPSILON) {
+						continue;
+					}
+					pSat->second._stecpergrid[i]._stec += gridDiff[i];
+				}
+			}
+		}
+	}
+}
+
 void StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
 {
 	/* 1.计算基线距离 */
@@ -948,9 +1019,7 @@ void StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
 
 	/* 2.参数/残差估计 */
 	for (int isys = 0; isys < NUMSYS; isys++) {
-		if (!(_cursys & _sysidx[isys])) {
-			continue;
-		}
+		if (!(_cursys & _sysidx[isys])) { continue; }
 
 		for (const auto& pSat : _satList[isys]) {
 			StecModSat satdata;

@@ -95,6 +95,7 @@ void ProOption::deepcopy(IN ProOption& src)
 		_ressys[i] = src._ressys[i];
 	}
 	_maxsatres    = src._maxsatres;
+	_algotype     = src._algotype;
 	_diffmode     = src._diffmode;
 	_refsatsmooth = src._refsatsmooth;
 	_minel        = src._minel;

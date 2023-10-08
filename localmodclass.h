@@ -483,6 +483,7 @@ public:
 			_usesys[i] = _fixsys[i] = _ressys[i] = 0;
 		}
 		_maxsatres = 20;
+		_algotype = 1;
 		_diffmode = 1;
 		_refsatsmooth = 0;
 		_minel = 15.0;
@@ -502,6 +503,7 @@ public:
 	int _fixsys[NUMSYS];		// fix system or not [0]no use [1]use
 	int _ressys[NUMSYS];		// use res or not    [0]no use [1]use
 	int _maxsatres;				// maximum satellite number use residuals *default: 20
+	int _algotype;				// innput data type [0]mixed [1]fixed
 	int _diffmode;				// difference mode [1]SD [2]SD+UD
 	int _refsatsmooth;			// reference satellite smooth [0]no use [1]use *default: 0
 	double _minel;				// minimum elevation angle (deg)
