@@ -6,6 +6,8 @@
 #include <vector>
 #include <map>
 #include <set>
+#include "io.h"
+#include "direct.h"
 #include "dirent.h"
 
 #include "comminterface.h"

@@ -583,7 +583,7 @@ bool StecModel::oneSatModelEst(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys
 		}
 	}
 
-	dat._nsta = stat == true ? obss.size() : 0;
+	dat._nsta = stat == true ? (int)obss.size() : 0;
 	
 	return stat;
 }
@@ -944,7 +944,7 @@ void StecModel::addStecMod(IN Gtime tnow)
 
 void StecModel::refSatSmoothing(IN Gtime tnow)
 {
-	int ep[6] = { 0.0 };
+	int ep[6] = { 0 };
 	time2epoch(tnow, ep);
 	const StecModSat* preRef = NULL;
 	const StecModSat* curRef = NULL;

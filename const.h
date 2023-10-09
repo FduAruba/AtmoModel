@@ -93,6 +93,7 @@ using namespace std;
 #define MAXCHARS    1024                    // max characters in one line
 #define MAXCOMMENT  128                     // max characters of comment
 #define MAXNAME     8                       // max characters of name
+#define MAXOUTCHARS 4096                    // max characters of output
 
 /* stec model ---------------------------------------------------------------------*/
 #define STECNX               3                 // stec coffeicient number

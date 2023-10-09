@@ -1,6 +1,6 @@
 #include <iostream>
 #include <bitset>
-#include "readfiles.h"
+#include "outfiles.h"
 
 using namespace std;
 
@@ -13,6 +13,7 @@ int main()
 	AtmoInfo* stecinf        = new AtmoInfo;		// stec数据
 	ProStecMod* stecmod      = new ProStecMod;		// stec建模
 	LocalAtmoModel* localMod = new LocalAtmoModel;	// 大气建模类
+	FileFps outfps;
 
 	/* 读取配置文件 */
 	if (readConfigFile(fname, config)) {
@@ -44,20 +45,21 @@ int main()
 			localMod->setReigon(*grid);
 			localMod->setOption(*popt);
 			localMod->_stecPro.setBasicOption(*popt, config._useres);
+			createRovFile(config, outfps);
 		}
 		localMod->setRefSites(stas);
 		
 		/* 大气建模 */
 		if (config._modeltype & 1) {
-			if (!localMod->doStecMod(t, *stecinf, *stecmod)) {
-				continue;
+			if (localMod->doStecMod(t, *stecinf, *stecmod)) {
+				
 			}
 		}
 		if (config._modeltype & 2) { //TODO: ZTD建模
 		}
 		if (config._modeltype & 4) { //TODO: STD建模
 		}
-		if (config._modeltype & 8) { //TODO:VTEC建模
+		if (config._modeltype & 8) { //TODO: VTEC建模
 		}
 
 		/* 输出建模结果 */

@@ -139,6 +139,7 @@
     <ClCompile Include="localmodclass.cpp" />
     <ClCompile Include="localmodel.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="outfiles.cpp" />
     <ClCompile Include="readfiles.cpp" />
     <ClCompile Include="stecmodel.cpp" />
     <ClCompile Include="stecroti.cpp" />
@@ -152,6 +153,7 @@
     <ClInclude Include="dirent.h" />
     <ClInclude Include="localmodclass.h" />
     <ClInclude Include="localmodel.h" />
+    <ClInclude Include="outfiles.h" />
     <ClInclude Include="readfiles.h" />
     <ClInclude Include="stecmodel.h" />
     <ClInclude Include="stecroti.h" />

@@ -437,6 +437,7 @@ public:
 			_QI[i] = 0;
 		}
 		_gridNum = 0;
+		_satreslevel = 0;
 	}
 	~ProStecModSat() {}
 
