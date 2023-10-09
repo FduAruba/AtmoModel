@@ -483,7 +483,7 @@ bool LocalAtmoModel::doStecModSys(IN int symbol)
 	return true;
 }
 
-void LocalAtmoModel::setRefSatBD2(IO StecModEpoch& mod)
+void LocalAtmoModel::resetRefSatBD2(IO StecModEpoch& mod)
 {
 	map<double, int> QIlist;
 	
@@ -501,6 +501,107 @@ void LocalAtmoModel::setRefSatBD2(IO StecModEpoch& mod)
 			mod._refsat[IDX_BDS2] = pSat.second;
 			break;
 		}
+	}
+}
+
+void LocalAtmoModel::setSatResLevel(IO StecModEpoch& mod)
+{
+	for (int isys = 0, nres = 0; isys < NUMSYS; isys++) {
+		if (_proOption._ressys[isys]) {
+			map<double, int> QIlist;
+			for (const auto& pSat : mod._stecmodgnss[isys]) {
+				QIlist.emplace(pSat.second._QI[1], pSat.first);
+			}
+
+			for (auto& pSat : QIlist) {
+				if (nres < _proOption._maxsatres) {
+					mod._stecmodgnss[isys][pSat.second]._satreslevel = 1;
+					nres++;
+				}
+			}
+		}
+	}
+}
+
+void LocalAtmoModel::copyStecSat(IN int sys, IN int ref, IN map<int, StecModSat>& src, OUT map<int, ProStecModSat>& dst)
+{
+	for (const auto& pSat : src) {
+		int prn = pSat.first;
+		const StecModSat& dat = pSat.second;
+
+		ProStecModSat tmp;
+		tmp._sys = dat._system;
+		tmp._sat = dat._sat;
+		for (int i = 0; i < 4; i++) {
+			tmp._coff[i] = dat._coeff[i];
+			tmp._coff_res[i] = dat._coeff_rms[i];
+		}
+		for (int i = 0; i < 2; i++) {
+			tmp._QI[i] = dat._QI[i];
+		}
+		if (_proOption._algotype) {
+			if (prn == ref) {
+				if (sys == IDX_BDS2) {
+					tmp._QI[0] = tmp._QI[1] = 0.08;
+				}
+				else {
+					tmp._QI[0] = tmp._QI[1] = 0.05;
+				}
+			}
+			else {
+				if (sys == IDX_BDS2) {
+					tmp._QI[0] = tmp._QI[0] > 0.125 ? tmp._QI[0] : 0.15;
+					tmp._QI[1] = tmp._QI[1] > 0.125 ? tmp._QI[1] : 0.15;
+				}
+				else {
+					tmp._QI[0] = tmp._QI[0] > 0.0625 ? tmp._QI[0] : 0.1;
+					tmp._QI[1] = tmp._QI[1] > 0.0625 ? tmp._QI[1] : 0.1;
+				}
+			}
+		}
+		else {
+			if (prn == ref) {
+				if (sys == IDX_BDS2) {
+					tmp._QI[0] = tmp._QI[1] = 0.35;
+				}
+				else {
+					tmp._QI[0] = tmp._QI[1] = 0.35;
+				}
+			}
+			else {
+				if (sys == IDX_BDS2) {
+					tmp._QI[0] = tmp._QI[0] > 0.5 ? tmp._QI[0] : 0.55;
+					tmp._QI[1] = tmp._QI[1] > 0.5 ? tmp._QI[1] : 0.55;
+				}
+				else {
+					tmp._QI[0] = tmp._QI[0] > 0.3125 ? tmp._QI[0] : 0.4;
+					tmp._QI[1] = tmp._QI[1] > 0.3125 ? tmp._QI[1] : 0.4;
+				}
+			}
+		}
+		tmp._satreslevel = dat._satreslevel;
+		tmp._gridNum = dat._gridNum;
+		for (int i = 0; i < tmp._gridNum; i++) {
+			tmp._stecpergrid[i]._gridid = dat._stecpergrid.at(i + 1)._gridid;
+			tmp._stecpergrid[i]._lat    = dat._stecpergrid.at(i + 1)._lat;
+			tmp._stecpergrid[i]._lon    = dat._stecpergrid.at(i + 1)._lon;
+			tmp._stecpergrid[i]._stec   = dat._stecpergrid.at(i + 1)._stec;
+			tmp._stecpergrid[i]._gridreslevel = dat._satreslevel > 0 ? 1 : 0;
+		}
+
+		dst.emplace(prn, tmp);
+	}
+}
+
+void LocalAtmoModel::copyStecMod(IN StecModEpoch& src, OUT ProStecMod& dst)
+{
+	dst._time = src._time;
+	dst._modetype = src._modetype;
+	for (int isys = 0; isys < NUMSYS; isys++) {
+		dst._satNum[isys] = src._satNum[isys];
+		dst._satRef[isys] = dst._satNum[isys] > 0 ? src._refsat[isys] : 0;
+
+		copyStecSat(isys, dst._satRef[isys], src._stecmodgnss[isys], dst._stecmod[isys]);
 	}
 }
 
@@ -525,13 +626,17 @@ bool LocalAtmoModel::doStecMod(IN Gtime tnow, IN AtmoInfo& stecinf, OUT ProStecM
 	/* 4.更新历史建模数据 */
 	_stecPro.addStecMod(tnow);
 
-	/* 5.若采用浮点/固定解混合建模，BD2重新选择QI最小的卫星作为参考星 */
+	/* 5.若采用混合解建模，BD2重新选择QI最小的卫星作为参考星 */
 	StecModEpoch stecModNow = _stecPro._stecModCur;
 	if (_proOption._algotype == 0) {
-		setRefSatBD2(stecModNow);
+		resetRefSatBD2(stecModNow);
 	}
 
-	/* 6.遍历系统/卫星，保存卫星残差信息 */
+	/* 6.遍历系统/卫星，设置残差等级 */
+	this->setSatResLevel(stecModNow);
+
+	/* 7.保存当前建模信息 */
+	this->copyStecMod(stecModNow, stecmod);
 
 	return true;
 }

@@ -33,8 +33,7 @@ int main()
 		}
 
 		/* 分配历元数据 */
-		stecinf->reset();
-		stecmod->reset();
+		stecinf->reset(); stecmod->reset();
 		if (!movAtmos(t, stas, *stecinf)) {
 			continue;
 		}
@@ -54,7 +53,12 @@ int main()
 				continue;
 			}
 		}
-
+		if (config._modeltype & 2) { //TODO: ZTD建模
+		}
+		if (config._modeltype & 4) { //TODO: STD建模
+		}
+		if (config._modeltype & 8) { //TODO:VTEC建模
+		}
 
 		/* 输出建模结果 */
 
@@ -71,6 +75,7 @@ int main()
 #endif
 
 	/* 释放内存空间 */
+	delete popt; delete grid; delete stecinf; delete stecmod; delete localMod;
 
 	return 0;
 }

@@ -62,7 +62,10 @@ public:
 	bool inputAtmoSite(IN Gtime tnow, IN AtmoInfo& stecinf, OUT map<int, int>* track, OUT map<int, EleStation>* numstas);
 	bool inputAtmoEpoch(IN Gtime tnow, IN AtmoInfo& stecinf, IN bool selectRef);
 	bool doStecModSys(IN int symbol);
-	void setRefSatBD2(IO StecModEpoch& mod);
+	void resetRefSatBD2(IO StecModEpoch& mod);
+	void setSatResLevel(IO StecModEpoch& mod);
+	void copyStecSat(IN int sys, IN int ref, IN map<int, StecModSat>& src, OUT map<int, ProStecModSat>& dst);
+	void copyStecMod(IN StecModEpoch& src, OUT ProStecMod& dst);
 	bool doStecMod(IN Gtime tnow, IN AtmoInfo& stecinf, OUT ProStecMod& stecmod);
 
 	int _stanumGEC;							// station number GEC

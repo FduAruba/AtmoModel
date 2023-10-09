@@ -994,7 +994,7 @@ void StecModel::refSatSmoothing(IN Gtime tnow)
 				}
 				gridDiff.emplace(i, diff);
 			}
-			// 当前历元参考星平滑
+			// 当前历元参考星平滑，对齐到上个历元
 			auto pSat = _stecModCur._stecmodgnss[isys].begin();
 			for (; pSat != _stecModCur._stecmodgnss[isys].end(); ++pSat) {
 				pSat->second._coeff[0] += dCoeff[0];

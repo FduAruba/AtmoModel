@@ -415,8 +415,8 @@ public:
 	~ProStecGrid() {}
 
 	int    _gridid;				 // grid ID
-	double _lat;				 // latitude  (deg)
-	double _lon;				 // longitude (deg)
+	double _lat;				 // latitude  (rad)
+	double _lon;				 // longitude (rad)
 	double _stec;				 // stecc (TECu)
 	unsigned char _gridreslevel; // 1.9.0 add 0~7
 
@@ -447,6 +447,7 @@ public:
 	double _QI[2];						// [0]withput res [1]with res
 	int    _gridNum;					// grid number
 	ProStecGrid _stecpergrid[MAX_GRID]; // stec grids
+	unsigned char _satreslevel;			// 2.0.0 add 0~7
 private:
 };
 /* process stec moddel */
