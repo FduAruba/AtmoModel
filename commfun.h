@@ -26,6 +26,7 @@ extern double str2num(IN char* s, IN int i, IN int n);
 /* position */
 extern void pos2ecef(IN double* pos, OUT double* r);
 extern double sphereDist(IN double latG, IN double lonG, IN double latB, IN double lonB);
+extern bool gridVaild(IN double latG, IN double lonG, IN double lat, IN double lon, IN double dlat, IN double dlon);
 
 /* sat system */
 extern bool checksys(IN char s);
@@ -36,6 +37,7 @@ extern int satsys(IN int sat, OUT int* prn);
 extern int satno(IN int sys, IN int prn);
 extern int satid2no(IN char* id);
 extern int satid2idx(IN char code, IN int num);
+extern double satfreq(IN int sys, IN int f);
 
 /* gps time */
 extern string strtime(IN Gtime t, IN int opt);

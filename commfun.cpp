@@ -92,6 +92,11 @@ extern double sphereDist(IN double latG, IN double lonG, IN double latB, IN doub
 	}
 }
 
+extern bool gridVaild(IN double latG, IN double lonG, IN double lat, IN double lon, IN double dlat, IN double dlon)
+{
+	return (latG > lat - dlat) && (latG < lat + dlat) && (lonG > lon - dlon) && (lonG < lon + dlon);
+}
+
 /* sat system */
 extern bool checksys(IN char s)
 {
@@ -257,6 +262,11 @@ extern int satid2idx(IN char code, IN int num) {
 	}
 
 	return idx;
+}
+
+extern double satfreq(IN int sys, IN int f)
+{
+	return FREQ_ALL[sys][f];
 }
 
 /* gps time */

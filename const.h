@@ -81,6 +81,33 @@ using namespace std;
 #define INTERFACE_MAX_BDS2      15          // max obs of one site: BDS2
 #define INTERFACE_MAX_BDS3      30          // max obs of one site: BDS3
 
+/* freq system --------------------------------------------------------------------*/
+#define FREQ1_GPS   1.57542E9      /* GPS L1 frequency (Hz) */
+#define FREQ2_GPS   1.22760E9      /* GPS L2 frequency (Hz) */
+#define FREQ5_GPS   1.17645E9      /* GPS L5 frequency (Hz) */
+
+#define FREQ1_GLO   1.60200E9      /* GLONASS G1 base frequency (Hz) */
+#define DFRQ1_GLO   0.56250E6      /* GLONASS G1 bias frequency (Hz/n) */
+#define FREQ2_GLO   1.24600E9      /* GLONASS G2 base frequency (Hz) */
+#define DFRQ2_GLO   0.43750E6      /* GLONASS G2 bias frequency (Hz/n) */
+#define FREQ3_GLO   1.202025E9     /* GLONASS G3 frequency (Hz) */
+
+#define FREQ1_GAL   1.57542E9      /* Galileo E1  frequency (Hz) */
+#define FREQ2_GAL   1.17645E9      /* Galileo E5a frequency (Hz) */
+#define FREQ3_GAL   1.20714E9      /* Galileo E5b frequency (Hz) */
+
+#define FREQ1_BDS   1.561098E9     /* BDS B1-2 frequency (Hz) */
+#define FREQ2_BDS   1.20714E9      /* BDS B2b  frequency (Hz) */
+#define FREQ3_BDS   1.26852E9      /* BDS B3   frequency (Hz) */
+
+#define NFREQ       3                   // number of carrier frequencies
+
+const double FREQ_ALL[NUMSYS][NFREQ] = {{FREQ1_GPS,FREQ2_GPS,FREQ5_GPS},
+										{FREQ1_GLO,FREQ2_GLO,FREQ3_GLO},
+										{FREQ1_GAL,FREQ2_GAL,FREQ3_GAL},
+										{FREQ1_BDS,FREQ2_BDS,FREQ3_BDS},
+										{FREQ1_BDS,FREQ2_BDS,FREQ3_BDS},};
+
 /* earth para ---------------------------------------------------------------------*/
 #define OMGE        7.2921151467E-5         // earth angular velocity (IS-GPS) (rad/s)
 #define RE_WGS84    6378137.0               // earth semimajor axis (WGS84) (m)
