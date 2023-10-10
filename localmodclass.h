@@ -412,6 +412,7 @@ public:
 		_lat = _lon = _stec = 0.0;
 		_gridreslevel = 0;
 	}
+	void deepcopy(IN ProStecGrid& src);
 	~ProStecGrid() {}
 
 	int    _gridid;				 // grid ID
@@ -439,6 +440,7 @@ public:
 		_gridNum = 0;
 		_satreslevel = 0;
 	}
+	void deepcopy(IN ProStecModSat& src);
 	~ProStecModSat() {}
 
 	char   _sys;						// system captial GREC

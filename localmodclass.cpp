@@ -7,6 +7,33 @@ void AtmoInfo::reset()
 	_sitesols.clear();
 }
 
+void ProStecGrid::deepcopy(IN ProStecGrid& src)
+{
+	this->_gridid = src._gridid;
+	this->_lat = src._lat;
+	this->_lon = src._lon;
+	this->_stec = src._stec;
+	this->_gridreslevel = src._gridreslevel;
+}
+
+void ProStecModSat::deepcopy(IN ProStecModSat& src)
+{
+	this->_sys = src._sys;
+	this->_sat = src._sat;
+	for (int i = 0; i < 4; i++) {
+		this->_coff[i] = src._coff[i];
+		this->_coff_res[i] = src._coff_res[i];
+	}
+	for (int i = 0; i < 2; i++) {
+		this->_QI[i] = src._QI[i];
+	}
+	this->_gridNum = src._gridNum;
+	for (int i = 0; i < this->_gridNum; i++) {
+		this->_stecpergrid[i].deepcopy(src._stecpergrid[i]);
+	}
+	this->_satreslevel = src._satreslevel;
+}
+
 void ProStecMod::reset()
 {
 	_time = { 0 };

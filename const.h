@@ -115,7 +115,7 @@ const double GRID_STEPN   = 20;
 //const double CUT_STEC_RES = (0.5 / 0.16);
 const double CUT_TECU     = (300.0 / 0.16);
 const double CUT_STD_RES  = 0.3;
-const double CUT_COV_STEC[] = { 0.25, 0.25, 0.25, 0.25 };
+const double CUT_COV_STEC[] = { 0.25, 0.25, 0.25, 0.25 ,0.25 };
 
 const int MAXSTA = 250;
 
