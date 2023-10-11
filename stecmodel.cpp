@@ -26,6 +26,11 @@ void StecModSat::reset()
 	_stecpergrid.clear();
 }
 
+void StecModel::settime(IN const Gtime t)
+{
+	this->_tnow = t;
+}
+
 void StecModel::setBasicOption(IN ProOption& opt, IN int res)
 {
 	_useres   = res;
@@ -623,7 +628,7 @@ double StecModel::calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid)
 	if (stalist.size() < 1) { return ERROR_VALUE; }
 
 	sort(stalist.begin(), stalist.end());
-	res = modelIDW(stalist, 4, 70000.0, 2);
+	res = modelIDW(stalist, 4, 70000.0, 2, NULL);
 
 	return res;
 }
@@ -655,7 +660,7 @@ double StecModel::calcRovTecRes(IN string site, IN const double* blh, IN GridInf
 	if (stalist.size() < 1) { return 0.0; }
 	stable_sort(stalist.begin(), stalist.end());
 
-	res = modelIDW(stalist, 4, 999000.0, 2);
+	res = modelIDW(stalist, 4, 999000.0, 2, NULL);
 	res = fabs(res - ERROR_VALUE) < DBL_EPSILON ? 0.0 : res;
 
 	return res;
@@ -815,7 +820,6 @@ bool StecModel::recalculateQI(IN AtmoEpoch& atmo, IN int sys, IN int prn, IN Gri
 		staRes.emplace_back(absdiff1);
 	}
 	if (nres <= 0) { return false; }
-
 	//printf("%c%02d nsmall=%3d nall=%3d\n", SYS, prn, n0, n1);
 
 	/* ¸üÐÂQI */

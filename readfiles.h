@@ -48,6 +48,7 @@ public:
 		}
 
 		_nlack = 0;
+		_nvali = _ngoodres = _nbadres = _noutl = 0;
 	};
 	~Coption() {};
 
@@ -84,6 +85,11 @@ public:
 	double _length[2];			// length   [0]lat [1]lon (deg)
 	/* debug*/
 	int _nlack;
+	int _nvali;
+	int _ngoodres;
+	int _nbadres;
+	int _noutl;
+	map<string, vector<double>> _rovstatic;
 
 private:
 

@@ -334,7 +334,7 @@ extern double robust(IN double V, OUT double rms)
 	return scale;
 }
 
-extern double modelIDW(IN StaDistIonArr& list, IN int nused, IN double maxdist, IN int k)
+extern double modelIDW(IN StaDistIonArr& list, IN int nused, IN double maxdist, IN int k, OUT int* n)
 {
 	int cnt = 0;
 	double sumwgt = 0.0, stawgt[MAXSTA] = { 0.0 };
@@ -351,6 +351,8 @@ extern double modelIDW(IN StaDistIonArr& list, IN int nused, IN double maxdist, 
 	}
 
 	if (cnt < 1) { return ERROR_VALUE; }
+
+	if (n) { *n = cnt; }
 
 	for (int i = 0; i < cnt; i++) {
 		res += stawgt[i] / sumwgt * list[i].ion;

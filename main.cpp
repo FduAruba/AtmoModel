@@ -50,10 +50,8 @@ int main()
 		localMod->setRefSites(stas);
 		
 		/* 大气建模 */
-		if (config._modeltype & 1) {
-			if (localMod->doStecMod(t, *stecinf, *stecmod)) {
-				outRovStec(config, *grid, rovs, *stecmod, outfps, 1);
-			}
+		if ((config._modeltype & 1) && (localMod->doStecMod(t, *stecinf, *stecmod))) {
+			outRovStec(config, *grid, rovs, *stecmod, outfps, 1);
 		}
 		if (config._modeltype & 2) { //TODO: ZTD建模
 		}
@@ -74,6 +72,22 @@ int main()
 	}
 	printf("nlack=%d\n", config._nlack);
 	printf("nbadroti=%d\n", localMod->_nbadroti);
+
+	for (auto it = config._rovstatic.begin(); it != config._rovstatic.end(); ++it) {
+		string rov_t = it->first;
+		double c1 = it->second[0] / it->second[3]*100.0;
+		double c2 = it->second[1] / it->second[3]*100.0;
+		double c3 = it->second[2] / it->second[3]*100.0;
+		printf("%s nall=%d ngood_res=%d nbad_res=%d nout=%d %.2f%% %.2f%% %.2f%%\n",
+			rov_t.c_str(),(int)it->second[3], (int)it->second[0], (int)it->second[1], (int)it->second[2],
+			c1, c2, c3);
+	}
+
+	double r1 = (1.0 * config._ngoodres) / (1.0 * config._nvali) * 100.0;
+	double r2 = (1.0 * config._nbadres) / (1.0 * config._nvali) * 100.0;
+	double r3 = (1.0 * config._noutl) / (1.0 * config._nvali) * 100.0;
+	printf("nall=%d ngood_res=%d nbad_res=%d nout=%d %.2f%% %.2f%% %.2f%%\n", 
+		config._nvali, config._ngoodres, config._nbadres, config._noutl, r1, r2, r3);
 #endif
 
 	/* 释放内存空间 */

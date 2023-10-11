@@ -162,6 +162,7 @@ public:
 	}
 	~StecModel() {}
 
+	void settime(IN const Gtime t);
 	void setBasicOption(IN ProOption& opt, IN int res);
 	bool setCurSys(IN int* usesys, IN int symbol);
 	int findSatStec(IN Gtime tnow, IN string site, IN int prn, IN int ref, IN int idx, 

@@ -21,9 +21,9 @@ bool checkRef(IN int sys, IN int ref, IN SiteAtmo& roviono)
 
 bool checkSat(IN int sys, IN int ref, IN int prn, IN SiteAtmo& roviono, IN double minEl)
 {
-	if (prn == ref) {
+	/*if (prn == ref) {
 		return false;
-	}
+	}*/
 	const auto& pSat = roviono._satIon[sys][prn];
 	const auto& pRef = roviono._satIon[sys][ref];
 	if (pSat._azel[1] < minEl) {
@@ -55,7 +55,7 @@ bool findStecModelSat(IN int sys, IN int prn, IN ProStecMod& stecmod, OUT ProSte
 	return false;
 }
 
-double rovRes(IN double lat, IN double lon, IN GridInfo& grid, IN ProStecModSat* satmod, IN ProStecModSat* refmod)
+double rovRes(IN double lat, IN double lon, IN GridInfo& grid, IN ProStecModSat* satmod, IN ProStecModSat* refmod, OUT int* n)
 {
 	double res = 0.0;
 	StaDistIonArr stalist;
@@ -81,33 +81,44 @@ double rovRes(IN double lat, IN double lon, IN GridInfo& grid, IN ProStecModSat*
 	if (stalist.size() < 1) { return 0.0; }
 	stable_sort(stalist.begin(), stalist.end());
 
-	res = modelIDW(stalist, 4, 999000.0, 2);
+	res = modelIDW(stalist, 4, 999000.0, 2, n);
 	res = fabs(res - ERROR_VALUE) < DBL_EPSILON ? 0.0 : res;
 
 	return res;
 }
 
-void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN SiteAtmo& roviono, IN ProStecMod& stecmod)
+void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& roviono, IN ProStecMod& stecmod, OUT OutRovStec& rovout)
 {
+	char buff[MAXOUTCHARS] = { '\0' }, * p = buff;
 	double thresEl = cfg._minel * D2R;
 	double latr = roviono._blh[0];
 	double lonr = roviono._blh[1];
 	double lat0 = cfg._center[0] * D2R;
 	double lon0 = cfg._center[1] * D2R;
+	string ROV = roviono._name;
+	bool stat = false;
+	string strt = strtime(stecmod._time, 2);
+
 	ProStecModSat* modsat = new ProStecModSat;
 	ProStecModSat* modref = new ProStecModSat;
 	
 	/*int n0 = 0, n1 = 0;
 	double dmax = 0.0, dno = 0.0;*/
 
+	rovout._time = stecmod._time;
+	rovout._name = ROV;
+
 	for (int isys = 0; isys < NUMSYS; isys++) {
+		char SYS = idx2sys(isys);
 		int ref = stecmod._satRef[isys];
 		if (!checkRef(isys, ref, roviono)) {
 			continue;
 		}
 		const auto& pRef = roviono._satIon[isys][ref];
+		rovout._satRef[isys] = ref;
 
 		//dmax = dno = 0.0;
+		int ngood = 0, nall = 0;
 		for (const auto& pSat : roviono._satIon[isys]) {
 			int prn = pSat.first;
 			if (!checkSat(isys, ref, prn, roviono, thresEl)) {
@@ -115,12 +126,11 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN SiteAtmo& roviono, IN Pr
 			}
 
 			modsat->reset(); modref->reset();
-
 			if (!findStecModelSat(isys, prn, stecmod, modsat) ||
 				!findStecModelSat(isys, ref, stecmod, modref)) {
 				continue;
 			}
-			
+
 			double el = pSat.second._azel[1] * R2D;
 			double f1 = satfreq(isys, 0);
 			double fact = 40.3E16 / pow(f1, 2);
@@ -128,14 +138,50 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN SiteAtmo& roviono, IN Pr
 			double mod_stec = fact * ((modsat->_coff[0] - modref->_coff[0]) +
 									  (modsat->_coff[1] - modref->_coff[1]) * (latr - lat0) +
 									  (modsat->_coff[2] - modref->_coff[2]) * (lonr - lon0));
+			int ngrid = 0;
 			double res = 0.0;
 			if (cfg._useres) {
-				res = rovRes(latr, lonr, grid, modsat, modref);
+				res = fact * rovRes(latr, lonr, grid, modsat, modref, &ngrid);
 			}
+			double diff0 = fabs(ppp_stec - mod_stec);
+			double diff1 = fabs(ppp_stec - mod_stec - res);
+			if (diff1 <= diff0) {
+				ngood++;
+			}
+			nall++;
 
+			if (diff1 <= diff0 && diff1 < 0.05) {
+				cfg._rovstatic[ROV][0]++;
+				cfg._ngoodres++;
+			}
+			else {
+				if (diff1 >= 0.05) {
+					double dtec = diff1 / fact;
+					printf("%s %s %c%02d outlier: nores=%6.3f withres=%6.3f dstec=%6.3f QI=%.3f\n", strt.c_str(), ROV.c_str(), SYS, prn, diff0, diff1, dtec, modsat->_QI[1]);
+					cfg._rovstatic[ROV][2]++;
+					cfg._noutl++;
+				}
+				else {
+					cfg._rovstatic[ROV][1]++;
+					cfg._nbadres++;
+				}
+			}
+			cfg._rovstatic[ROV][3]++;
+			cfg._nvali++;
+
+
+			/*if (diff1 > diff0 && diff1 > 0.1) {
+				printf("%s %s %c%02d outlier: nores=%6.3f withres=%6.3f\n", strt.c_str(), ROV.c_str(), SYS, prn, diff0, diff1);
+				cfg._noutl++;
+			}
+			if (diff1 <= diff0) {
+				cfg._ngoodres++;
+			}
+			else {
+				cfg._nbadres++;
+			}
+			cfg._nvali++;*/
 			///* debug ---------------------------------------------------------------------*/ 
-			//double diff0 = fabs(ppp_stec - mod_stec);
-			//double diff1 = fabs(ppp_stec - mod_stec - fact * res);
 			//if (diff1 <= diff0) {
 			//	printf("%s %c%02d nores:%5.3f withres:%5.3f [yes]\n", roviono._name.c_str(), idx2sys(isys), prn, diff0, diff1);
 			//	n0++;
@@ -150,11 +196,31 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN SiteAtmo& roviono, IN Pr
 			//n1++;
 			///* debug ---------------------------------------------------------------------*/
 
-			mod_stec += fact * res;
+			OutSatVeri satdat;
+			satdat._sys = SYS;
+			satdat._prn = prn;
+			satdat._fixflag = pSat.second._fixflag;
+			satdat._resflag = diff1 <= diff0 ? 1 : 0;
+			satdat._ngrid = ngrid;
+			satdat._el = el;
+			satdat._dstec[0] = ppp_stec;
+			satdat._dstec[1] = mod_stec;
+			satdat._dstec[2] = mod_stec + res;
+			satdat._dDstec[0] = diff0;
+			satdat._dDstec[1] = diff1;
+			rovout._satveris[isys].emplace(prn, satdat);
+			stat = true;
 		}
 		//printf("%c dno=%5.3f dmax=%5.3f\n", idx2sys(isys), dno, dmax);
+		rovout._rate[isys] = (1.0 * ngood) / (1.0 * nall);
 	}
 	//printf("%s nsmall=%3d nall=%3d\n", roviono._name.c_str(), n0, n1);
+
+	if (stat) {
+		for (int i = 0; i < NUMSYS; i++) {
+			rovout._satNum[i] = (int)rovout._satveris[i].size();
+		}
+	}
 
 	delete modsat; delete modref;
 	return;
@@ -162,7 +228,7 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN SiteAtmo& roviono, IN Pr
 
 void outRovStec(IN Coption& cfg, IN GridInfo& grid, IN SiteAtmos& rovaug, IN ProStecMod& stecmod, IN FileFps& rovfps, IN int type)
 {
-	char buff[MAXOUTCHARS] = { '/0' }, * p = buff;
+	vector<OutRovStec> rovs;
 
 	for (const auto& pRov : rovaug) {
 		int sid = pRov.first;
@@ -171,16 +237,24 @@ void outRovStec(IN Coption& cfg, IN GridInfo& grid, IN SiteAtmos& rovaug, IN Pro
 		if (rovfps[rov].find(type) == rovfps[rov].end()) { continue; }
 		if (rovfps[rov][type] == NULL)					 { continue; }
 
-		rovStecDiff(cfg, grid, rovaug[sid], stecmod);
+		if (cfg._rovstatic.find(rov) == cfg._rovstatic.end()) {
+			cfg._rovstatic.emplace(rov, vector<double>(4, 0.0));
+		}
 
-		int tt = 1;
+		OutRovStec rovout;
+		rovStecDiff(cfg, grid, rovfps[rov][type], rovaug[sid], stecmod, rovout);
+		rovs.push_back(rovout);
 	}
+	int tt = 1;
 }
 
 void createRovFile(IN Coption& cfg, OUT FileFps& fps)
 {
 	if (0 != _access(cfg._pathou.c_str(), 0)) {
-		_mkdir(cfg._pathou.c_str());
+		if (!_mkdir(cfg._pathou.c_str())) {
+			printf("***ERROR: create dir %s failed, please check it!\n", cfg._pathou.c_str());
+			return;
+		}
 	}
 	
 	for (const auto& pSta : cfg._rov) {

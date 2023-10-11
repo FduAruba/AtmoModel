@@ -24,7 +24,7 @@ bool LocalAtmoModel::setRefSites(IN SiteAtmos& stas)
 			pSta.second._blh[0] * R2D > _gridinfo._latcell[1] ||
 			pSta.second._blh[1] * R2D < _gridinfo._loncell[0] ||
 			pSta.second._blh[1] * R2D > _gridinfo._loncell[1]) {
-			printf("%s %8.2f%8.2f\n", pSta.second._name.c_str(), pSta.second._blh[0] * R2D, pSta.second._blh[1] * R2D);
+			//printf("%s %8.2f%8.2f\n", pSta.second._name.c_str(), pSta.second._blh[0] * R2D, pSta.second._blh[1] * R2D);
 			continue;
 		}
 
@@ -607,7 +607,7 @@ void LocalAtmoModel::copyStecMod(IN StecModEpoch& src, OUT ProStecMod& dst)
 
 bool LocalAtmoModel::doStecMod(IN Gtime tnow, IN AtmoInfo& stecinf, OUT ProStecMod& stecmod)
 {
-	_stecPro._tnow = tnow;
+	_stecPro.settime(tnow);
 
 	/* 1.输入当前历元的STEC数据  */
 	if (!inputAtmoEpoch(tnow, stecinf, true)) {

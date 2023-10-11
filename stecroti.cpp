@@ -97,12 +97,12 @@ int StecRoti::calcROT(IN Gtime tnow)
 				double diffsec = in->first - ie->first;
 				if (diffsec > 0.0) {
 					double rot = (in->second - ie->second) * 60.0 / diffsec; // TECu/min
-					if (fabs(rot) > 20.0 && in->first >= tnow) {
-						printf("%s %c%02d %4s %6.2f\n", strtime(ie->first, 2).c_str(), it.first._system, 
+					/*if (fabs(rot) > 20.0 && in->first >= tnow) {
+						printf("%s %c%02d %4s ROT=%6.2f\n", strtime(ie->first, 2).c_str(), it.first._system, 
 							prn, it.first._site.c_str(), rot);
 						cjmp++;
 						bwrite = 1;
-					}
+					}*/
 					_cellSatsRot[isys][prn]._rotArray.push_back(rot);
 					_cellSatsRot[isys][prn]._sum += rot;
 					cnt++;
@@ -110,9 +110,9 @@ int StecRoti::calcROT(IN Gtime tnow)
 			}
 		}
 	}
-	if (bwrite && cjmp > 50) {
+	/*if (bwrite && cjmp > 50) {
 		printf("%s %d\n", strtime(tnow, 2).c_str(), cjmp);
-	}
+	}*/
 	
 	return cnt;
 }
