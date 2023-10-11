@@ -16,6 +16,15 @@ void ProStecGrid::deepcopy(IN ProStecGrid& src)
 	this->_gridreslevel = src._gridreslevel;
 }
 
+void ProStecGrid::reset()
+{
+	this->_gridid = 0;
+	this->_lat = 0.0;
+	this->_lon = 0.0;
+	this->_stec = 0.0;
+	this->_gridreslevel = 0;
+}
+
 void ProStecModSat::deepcopy(IN ProStecModSat& src)
 {
 	this->_sys = src._sys;
@@ -32,6 +41,24 @@ void ProStecModSat::deepcopy(IN ProStecModSat& src)
 		this->_stecpergrid[i].deepcopy(src._stecpergrid[i]);
 	}
 	this->_satreslevel = src._satreslevel;
+}
+
+void ProStecModSat::reset()
+{
+	this->_sys = '\0';
+	this->_sat = 0;
+	for (int i = 0; i < 4; i++) {
+		this->_coff[i] = 0.0;
+		this->_coff_res[i] = 0.0;
+	}
+	for (int i = 0; i < 2; i++) {
+		this->_QI[i] = 0;
+	}
+	for (int i = 0; i < this->_gridNum; i++) {
+		this->_stecpergrid[i].reset();
+	}
+	this->_gridNum = 0;
+	this->_satreslevel = 0;
 }
 
 void ProStecMod::reset()

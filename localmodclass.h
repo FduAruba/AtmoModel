@@ -413,6 +413,7 @@ public:
 		_gridreslevel = 0;
 	}
 	void deepcopy(IN ProStecGrid& src);
+	void reset();
 	~ProStecGrid() {}
 
 	int    _gridid;				 // grid ID
@@ -441,6 +442,7 @@ public:
 		_satreslevel = 0;
 	}
 	void deepcopy(IN ProStecModSat& src);
+	void reset();
 	~ProStecModSat() {}
 
 	char   _sys;						// system captial GREC

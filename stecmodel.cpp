@@ -768,7 +768,7 @@ bool StecModel::recalculateQI(IN AtmoEpoch& atmo, IN int sys, IN int prn, IN Gri
 	vector<double> staRes;
 	staRes.reserve(atmo._staAtmos.size());
 
-	int n0 = 0, n1 = 0;
+	//int n0 = 0, n1 = 0;
 	
 	/* 计算所有格网到所有建模站的残差 */
 	for (auto& pSta : atmo._staAtmos) {
@@ -794,28 +794,29 @@ bool StecModel::recalculateQI(IN AtmoEpoch& atmo, IN int sys, IN int prn, IN Gri
 		double dlon = pos._lon - grid._center[1] * D2R;
 		double stec = dat._coeff[0] + dat._coeff[1] * dlat + dat._coeff[2] * dlon;
 		res  = calcRovTecRes(site, atmosta._staInfo._blh, grid, dat);
-		//stec += res;
 		double absdiff0 = fabs(pSat->second._iono - stec);
-		double absdiff = fabs(pSat->second._iono - stec - res);
+		double absdiff1 = fabs(pSat->second._iono - stec - res);
 
-		if (absdiff <= absdiff0) {
-			n0++;
-		}
-		n1++;
-		//printf("%s %c%02d nores:%9.5f withres:%9.5f\n", site.c_str(), SYS, prn, absdiff0, absdiff);
+		///* debug ---------------------------------------------------------------------*/
+		//if (absdiff1 <= absdiff0) {
+		//	n0++;
+		//}
+		//n1++;
+		//printf("%s %c%02d nores:%9.5f withres:%9.5f\n", site.c_str(), SYS, prn, absdiff0, absdiff1);
+		///* debug ---------------------------------------------------------------------*/
 
 		double thres = sys == IDX_GLO ? CUT_STEC_RES : 10.0 * CUT_STEC_RES;
-		if (absdiff > thres) {
+		if (absdiff1 > thres) {
 			nbig++;
 		}
 		nres++;
-		mean_res += absdiff;
+		mean_res += absdiff1;
 
-		staRes.emplace_back(absdiff);
+		staRes.emplace_back(absdiff1);
 	}
 	if (nres <= 0) { return false; }
 
-	printf("%c%02d nsmall=%3d nall=%3d\n", SYS, prn, n0, n1);
+	//printf("%c%02d nsmall=%3d nall=%3d\n", SYS, prn, n0, n1);
 
 	/* 更新QI */
 	stable_sort(staRes.begin(), staRes.end());
