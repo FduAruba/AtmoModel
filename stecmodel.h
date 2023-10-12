@@ -71,7 +71,7 @@ public:
 	char   _system;						// system captial GREC
 	int    _sat;						// sat number
 	double _ele;						// elevation (rad)
-	int    _nsta;
+	int    _nsta;						// number of ref stations
 	/* coffeicients & residual */
 	double _coeff[4];					// coeffeicient C00 C01 C10 C11
 	double _coeff_rms[4];				// coeffeicient rms
@@ -179,7 +179,7 @@ public:
 	bool estCoeff(IN vector<stecOBS>& obss, IN GridInfo& grid, IN int sys, IN int prn, OUT StecModSat& dat);
 	bool oneSatModelEst(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys, IN int prn, OUT StecModSat& dat);
 	double calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid);
-	double calcRovTecRes(IN string site, IN const double* blh, IN GridInfo& grid, IN StecModSat& dat);
+	double calcRovTecRes(IN string site, IN const double* blh, IN GridInfo& grid, IN StecModSat& dat, IN int* n);
 	bool oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys, IN int prn, IO StecModSat& dat);
 	bool recalculateQI(IN AtmoEpoch& atmo, IN int sys, IN int prn, IN GridInfo& grid, OUT StecModSat& dat);
 	void satModAndRes(IN int id, IN double dlat, IN double dlon, IN const StecModSat& satdat, OUT double& stec, OUT double& res);

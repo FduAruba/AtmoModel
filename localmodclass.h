@@ -432,6 +432,7 @@ public:
 	{
 		_sys = '\0';
 		_sat = 0;
+		_nsta = 0;
 		for (int i = 0; i < 4; i++) {
 			_coff[i] = _coff_res[i] = 0.0;
 		}
@@ -447,6 +448,7 @@ public:
 
 	char   _sys;						// system captial GREC
 	int    _sat;						// sat number
+	int    _nsta;						// number of stations
 	double _coff[4];					// coffeicient C00 C01 C10 C11
 	double _coff_res[4];				// coffeicient residual
 	double _QI[2];						// [0]withput res [1]with res

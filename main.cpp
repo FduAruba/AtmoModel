@@ -50,8 +50,10 @@ int main()
 		localMod->setRefSites(stas);
 		
 		/* 大气建模 */
-		if ((config._modeltype & 1) && (localMod->doStecMod(t, *stecinf, *stecmod))) {
-			outRovStec(config, *grid, rovs, *stecmod, outfps, 1);
+		if (config._modeltype & 1) {
+			if (localMod->doStecMod(t, *stecinf, *stecmod)) {
+				outRovStec(config, *grid, rovs, *stecmod, outfps, 1);
+			}
 		}
 		if (config._modeltype & 2) { //TODO: ZTD建模
 		}

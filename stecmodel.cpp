@@ -354,7 +354,8 @@ int StecModel::markUnhalthSites(IO vector<stecOBS>& obss)
 			Pos pos;
 			pos._lat = it->_lat;
 			pos._lon = it->_lon;
-			if ((it->_stec - vmean) > 4 * vrms) {
+			double diff = fabs(it->_stec - vmean);
+			if (diff > 4.0 * vrms) {
 				_badsta.push_back(pos);
 				nbad[0]++;
 				it = obss.erase(it);
@@ -362,7 +363,6 @@ int StecModel::markUnhalthSites(IO vector<stecOBS>& obss)
 			else {
 				++it;
 			}
-
 		}
 	} while (nbad[0] > nbad[1]);
 
@@ -412,7 +412,7 @@ int StecModel::markUnhalthSitesRes(IN int sys, IN int prn, OUT int& nsta)
 			}
 
 			double diff = fabs(pSat->second._iono - vmean);
-			if (diff > 1.0 && diff > 3.0 * vrms) {
+			if (diff > 1.0 && diff > 4.0 * vrms) {
 				_badsta.push_back(pos);
 				nbad[0]++;
 				pSta.second._satInfos[sys].erase(prn);
@@ -575,9 +575,10 @@ bool StecModel::oneSatModelEst(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys
 
 	for (int i = 0; i < 1; i++) {
 		/* 3.剔除粗差观测值，当占比>30%，返回false */
+		int nall = (int)obss.size();
 		int nbad = markUnhalthSites(obss);
-		if (1.0 * nbad / obss.size() > 0.3) {
-			printf("%s %c%02d nbad = %2d nall = %2d\n", tstr.c_str(), SYS, prn, nbad, (int)obss.size());
+		if (1.0 * nbad / nall > 0.3) {
+			printf("%s %c%02d nbad = %2d nall = %2d\n", tstr.c_str(), SYS, prn, nbad, nall);
 			break;
 		}
 
@@ -633,7 +634,7 @@ double StecModel::calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid)
 	return res;
 }
 
-double StecModel::calcRovTecRes(IN string site, IN const double* blh, IN GridInfo& grid, IN StecModSat& dat)
+double StecModel::calcRovTecRes(IN string site, IN const double* blh, IN GridInfo& grid, IN StecModSat& dat, IN int* n)
 {
 	double lat = blh[0], lon = blh[1], res = 0.0;
 	StaDistIonArr stalist;
@@ -648,9 +649,7 @@ double StecModel::calcRovTecRes(IN string site, IN const double* blh, IN GridInf
 		}
 
 		double dist = _siteGridDist.getDist(i, site);
-		if (dist < 10.0) {
-			dist = 10.0;
-		}
+		dist = dist < 10.0 ? 10.0 : dist;
 
 		if (onegrid.isVaild(lat, lon, grid._step[0], grid._step[1])) {
 			stalist.emplace_back(dist, ion);
@@ -660,7 +659,7 @@ double StecModel::calcRovTecRes(IN string site, IN const double* blh, IN GridInf
 	if (stalist.size() < 1) { return 0.0; }
 	stable_sort(stalist.begin(), stalist.end());
 
-	res = modelIDW(stalist, 4, 999000.0, 2, NULL);
+	res = modelIDW(stalist, 4, 999000.0, 2, n);
 	res = fabs(res - ERROR_VALUE) < DBL_EPSILON ? 0.0 : res;
 
 	return res;
@@ -798,17 +797,22 @@ bool StecModel::recalculateQI(IN AtmoEpoch& atmo, IN int sys, IN int prn, IN Gri
 		double dlat = pos._lat - grid._center[0] * D2R;
 		double dlon = pos._lon - grid._center[1] * D2R;
 		double stec = dat._coeff[0] + dat._coeff[1] * dlat + dat._coeff[2] * dlon;
-		res  = calcRovTecRes(site, atmosta._staInfo._blh, grid, dat);
+		int ngrid = 0;
+		double stecres = calcRovTecRes(site, atmosta._staInfo._blh, grid, dat, &ngrid);
 		double absdiff0 = fabs(pSat->second._iono - stec);
-		double absdiff1 = fabs(pSat->second._iono - stec - res);
+		double absdiff1 = fabs(pSat->second._iono - stec - stecres);
 
-		///* debug ---------------------------------------------------------------------*/
-		//if (absdiff1 <= absdiff0) {
-		//	n0++;
-		//}
+		/* debug ---------------------------------------------------------------------*/
+		/*if (absdiff1 <= absdiff0) {
+			n0++;
+		}*/
 		//n1++;
-		//printf("%s %c%02d nores:%9.5f withres:%9.5f\n", site.c_str(), SYS, prn, absdiff0, absdiff1);
-		///* debug ---------------------------------------------------------------------*/
+		/*double el = pSat->second._azel[1] * R2D;
+		if (absdiff1 > 0.3) {
+			printf("%s %c%02d res0:%6.3f res1:%6.3f QI=%6.2f el==%5.1f nsta=%2d ngrid=%2d\n", 
+				site.c_str(), SYS, prn, absdiff0, absdiff1, dat._QI[1], el, dat._nsta, ngrid);
+		}*/
+		/* debug ---------------------------------------------------------------------*/
 
 		double thres = sys == IDX_GLO ? CUT_STEC_RES : 10.0 * CUT_STEC_RES;
 		if (absdiff1 > thres) {

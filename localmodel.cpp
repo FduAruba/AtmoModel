@@ -532,6 +532,7 @@ void LocalAtmoModel::copyStecSat(IN int sys, IN int ref, IN map<int, StecModSat>
 		ProStecModSat tmp;
 		tmp._sys = dat._system;
 		tmp._sat = dat._sat;
+		tmp._nsta = dat._nsta;
 		for (int i = 0; i < 4; i++) {
 			tmp._coff[i] = dat._coeff[i];
 			tmp._coff_res[i] = dat._coeff_rms[i];

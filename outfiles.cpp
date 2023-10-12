@@ -150,14 +150,15 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 			}
 			nall++;
 
-			if (diff1 <= diff0 && diff1 < 0.05) {
+			if (diff1 <= diff0 && diff1 < 0.08) {
 				cfg._rovstatic[ROV][0]++;
 				cfg._ngoodres++;
 			}
 			else {
-				if (diff1 >= 0.05) {
+				if (diff1 >= 0.08) {
 					double dtec = diff1 / fact;
-					printf("%s %s %c%02d outlier: nores=%6.3f withres=%6.3f dstec=%6.3f QI=%.3f\n", strt.c_str(), ROV.c_str(), SYS, prn, diff0, diff1, dtec, modsat->_QI[1]);
+					printf("%s %s %c%02d OUT: res0=%6.3f res1=%6.3f dstec=%6.2f QI=%6.2f el=%5.1f nsta=%2d ngrid=%2d\n",
+						strt.c_str(), ROV.c_str(), SYS, prn, diff0, diff1, dtec, modsat->_QI[1], el, modsat->_nsta, ngrid);
 					cfg._rovstatic[ROV][2]++;
 					cfg._noutl++;
 				}
@@ -240,7 +241,7 @@ void outRovStec(IN Coption& cfg, IN GridInfo& grid, IN SiteAtmos& rovaug, IN Pro
 		if (cfg._rovstatic.find(rov) == cfg._rovstatic.end()) {
 			cfg._rovstatic.emplace(rov, vector<double>(4, 0.0));
 		}
-
+		
 		OutRovStec rovout;
 		rovStecDiff(cfg, grid, rovfps[rov][type], rovaug[sid], stecmod, rovout);
 		rovs.push_back(rovout);
