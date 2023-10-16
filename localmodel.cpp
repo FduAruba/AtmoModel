@@ -585,6 +585,7 @@ void LocalAtmoModel::copyStecSat(IN int sys, IN int ref, IN map<int, StecModSat>
 		for (int i = 0; i < tmp._gridNum; i++) {
 			tmp._stecpergrid[i]._gridid = dat._stecpergrid.at(i + 1)._gridid;
 			tmp._stecpergrid[i]._lat    = dat._stecpergrid.at(i + 1)._lat;
+			tmp._stecpergrid[i]._nsta   = dat._stecpergrid.at(i + 1)._nsta;
 			tmp._stecpergrid[i]._lon    = dat._stecpergrid.at(i + 1)._lon;
 			tmp._stecpergrid[i]._stec   = dat._stecpergrid.at(i + 1)._stec;
 			tmp._stecpergrid[i]._gridreslevel = dat._satreslevel > 0 ? 1 : 0;

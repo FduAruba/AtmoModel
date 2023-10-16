@@ -409,6 +409,7 @@ public:
 	ProStecGrid()
 	{
 		_gridid = 0;
+		_nsta = 0;
 		_lat = _lon = _stec = 0.0;
 		_gridreslevel = 0;
 	}
@@ -417,6 +418,7 @@ public:
 	~ProStecGrid() {}
 
 	int    _gridid;				 // grid ID
+	int    _nsta;				 // number of sta res
 	double _lat;				 // latitude  (rad)
 	double _lon;				 // longitude (rad)
 	double _stec;				 // stecc (TECu)

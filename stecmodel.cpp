@@ -594,7 +594,7 @@ bool StecModel::oneSatModelEst(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys
 	return stat;
 }
 
-double StecModel::calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid)
+double StecModel::calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid, OUT int* nsta)
 {
 	int ref = _stecModCur._refsat[sys];
 	double res = ERROR_VALUE;
@@ -629,7 +629,7 @@ double StecModel::calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid)
 	if (stalist.size() < 1) { return ERROR_VALUE; }
 
 	sort(stalist.begin(), stalist.end());
-	res = modelIDW(stalist, 4, 99000.0, 2, NULL);
+	res = modelIDW(stalist, 4, 99000.0, 2, nsta);
 
 	return res;
 }
@@ -659,7 +659,7 @@ double StecModel::calcRovTecRes(IN string site, IN const double* blh, IN GridInf
 	if (stalist.size() < 1) { return 0.0; }
 	stable_sort(stalist.begin(), stalist.end());
 
-	res = modelIDW(stalist, 4, 999000.0, 2, n);
+	res = modelIDW(stalist, 4, 70000.0, 2, n);
 	res = fabs(res - ERROR_VALUE) < DBL_EPSILON ? 0.0 : res;
 
 	return res;
@@ -742,7 +742,8 @@ bool StecModel::oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys,
 	dat._gridNum = grid._gridNum;
 	//int nerr = 0;
 	for (int i = 0; i < grid._gridNum; i++) {
-		double res = calcGridTecRes(sys, prn, grid._grids[i]);
+		int nsta = 0;
+		double res = calcGridTecRes(sys, prn, grid._grids[i], &nsta);
 		if (fabs(res - ERROR_VALUE) < DBL_EPSILON) {
 			res = ERROR_VALUE;
 			//nerr++;
@@ -754,6 +755,7 @@ bool StecModel::oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys,
 		stecgrid._lat = grid._grids[i]._lat;
 		stecgrid._lon = grid._grids[i]._lon;
 		stecgrid._rms = 0.0;
+		stecgrid._nsta = nsta;
 		//printf("%c%02d #%02d Res:%8.3f\n", SYS, prn, i + 1, res);
 	}
 	//printf("%02d\n", nerr);

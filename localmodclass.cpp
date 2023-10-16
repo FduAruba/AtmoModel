@@ -10,6 +10,7 @@ void AtmoInfo::reset()
 void ProStecGrid::deepcopy(IN ProStecGrid& src)
 {
 	this->_gridid = src._gridid;
+	this->_nsta = src._nsta;
 	this->_lat = src._lat;
 	this->_lon = src._lon;
 	this->_stec = src._stec;
@@ -19,6 +20,7 @@ void ProStecGrid::deepcopy(IN ProStecGrid& src)
 void ProStecGrid::reset()
 {
 	this->_gridid = 0;
+	this->_nsta = 0;
 	this->_lat = 0.0;
 	this->_lon = 0.0;
 	this->_stec = 0.0;
