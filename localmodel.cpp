@@ -608,6 +608,7 @@ void LocalAtmoModel::copyStecMod(IN StecModEpoch& src, OUT ProStecMod& dst)
 
 bool LocalAtmoModel::doStecMod(IN Gtime tnow, IN AtmoInfo& stecinf, OUT ProStecMod& stecmod)
 {
+	bool stat = false;
 	_stecPro.settime(tnow);
 
 	/* 1.输入当前历元的STEC数据  */
@@ -616,8 +617,11 @@ bool LocalAtmoModel::doStecMod(IN Gtime tnow, IN AtmoInfo& stecinf, OUT ProStecM
 	}
 
 	/* 2.STEC建模 */
-	if (_stanumGEC > 0) { doStecModSys(0); }
-	if (_stanumR   > 0) { doStecModSys(1); }
+	if (_stanumGEC > 0) { stat |= doStecModSys(0); }
+	if (_stanumR   > 0) { stat |= doStecModSys(1); }
+	if (!stat) {
+		return false;
+	}
 
 	/* 3.参考星平滑 */
 	if (_stecPro._refsatsmooth) {

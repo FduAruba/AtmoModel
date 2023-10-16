@@ -6,6 +6,7 @@ using namespace std;
 
 int main()
 {
+	double t1, t2;
 	char fname[MAXCHARS] = "C:\\Users\\shuqh\\Desktop\\rsim.cfg";
 	Coption config;									// 配置文件
 	ProOption* popt          = new ProOption;		// 处理设置
@@ -15,6 +16,7 @@ int main()
 	LocalAtmoModel* localMod = new LocalAtmoModel;	// 大气建模类
 	FileFps outfps;
 
+	t1 = clock();
 	/* 读取配置文件 */
 	if (readConfigFile(fname, config)) {
 		movOption(config, *popt);
@@ -72,26 +74,28 @@ int main()
 		double r2 = pSta._nepo > 0 ? (double)pSta._nepo / 17280.0 * 100.0 : 0.0;
 		printf("%s #%2d nep=%6d nbad=%6d r1=%6.2f%% r2=%6.2f%%\n", pSta._name.c_str(), pSta._ID, pSta._nepo, pSta._nbad, r1, r2);
 	}
-	printf("nlack=%d\n", config._nlack);
-	printf("nbadroti=%d\n", localMod->_nbadroti);
+	printf("nlack=%5d\n", config._nlack);
+	printf("nbadroti=%5d\n", localMod->_nbadroti);
 
 	for (auto it = config._rovstatic.begin(); it != config._rovstatic.end(); ++it) {
 		string rov_t = it->first;
 		double c1 = it->second[0] / it->second[3]*100.0;
 		double c2 = it->second[1] / it->second[3]*100.0;
 		double c3 = it->second[2] / it->second[3]*100.0;
-		printf("%s nall=%d ngood_res=%d nbad_res=%d nout=%d %.2f%% %.2f%% %.2f%%\n",
+		printf("%s nall=%7d ngood_res=%7d nbad_res=%7d nout=%7d %.2f%% %5.2f%% %5.2f%%\n",
 			rov_t.c_str(),(int)it->second[3], (int)it->second[0], (int)it->second[1], (int)it->second[2],
 			c1, c2, c3);
 	}
 
 	double r1 = (1.0 * config._ngoodres) / (1.0 * config._nvali) * 100.0;
-	double r2 = (1.0 * config._nbadres) / (1.0 * config._nvali) * 100.0;
-	double r3 = (1.0 * config._noutl) / (1.0 * config._nvali) * 100.0;
-	printf("nall=%d ngood_res=%d nbad_res=%d nout=%d %.2f%% %.2f%% %.2f%%\n", 
+	double r2 = (1.0 * config._nbadres)  / (1.0 * config._nvali) * 100.0;
+	double r3 = (1.0 * config._noutl)    / (1.0 * config._nvali) * 100.0;
+	printf("---- nall=%7d ngood_res=%7d nbad_res=%7d nout=%7d %.2f%% %5.2f%% %5.2f%%\n", 
 		config._nvali, config._ngoodres, config._nbadres, config._noutl, r1, r2, r3);
 #endif
 
+	t2 = clock();
+	printf("\n* Total program time: %4.1f minute\n", (t2 - t1) / CLOCKS_PER_SEC / 60.0);
 	/* 释放内存空间 */
 	delete popt; delete grid; delete stecinf; delete stecmod; delete localMod;
 

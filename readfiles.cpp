@@ -529,7 +529,7 @@ extern bool readAugmentData(IN Gtime tnow, IN Coption& config, OUT SiteAtmos& st
 	double rate = (double)nsta / (double)nall * 100.0;
 
 	if (rate < thres) {
-		printf("%s: nsta=%3d nrov=%3d %5.1f%%\n", strtime(tnow, 2).c_str(), nsta, nrov, rate);
+		printf("%s nsta=%3d nrov=%3d %5.1f%%\n", strtime(tnow, 2).c_str(), nsta, nrov, rate);
 		config._nlack++;
 	}
 
