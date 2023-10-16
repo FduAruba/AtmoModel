@@ -629,7 +629,7 @@ double StecModel::calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid)
 	if (stalist.size() < 1) { return ERROR_VALUE; }
 
 	sort(stalist.begin(), stalist.end());
-	res = modelIDW(stalist, 4, 70000.0, 2, NULL);
+	res = modelIDW(stalist, 4, 99000.0, 2, NULL);
 
 	return res;
 }

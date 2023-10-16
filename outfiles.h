@@ -14,6 +14,7 @@ public:
 		_prn = 0;
 		_fixflag = 0;
 		_resflag = 0;
+		_outflag = 0;
 		_ngrid = 0;
 		_el = 0.0;
 		_dstec[0] = _dstec[1] = _dstec[2] = 0.0;
@@ -25,6 +26,7 @@ public:
 	int _prn;
 	int _fixflag;
 	int _resflag;
+	int _outflag;
 	int _ngrid;
 	double _el;
 	double _dstec[3];
