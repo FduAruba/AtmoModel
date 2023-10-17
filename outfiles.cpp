@@ -117,7 +117,7 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 	rovout._time = stecmod._time;
 	rovout._name = ROV;
 
-	for (int isys = 0; isys < 1; isys++) {
+	for (int isys = 0; isys < NUMSYS; isys++) {
 		char SYS = idx2sys(isys);
 		int ref = stecmod._satRef[isys];
 		if (!checkRef(isys, ref, roviono)) {
@@ -182,10 +182,8 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 			cfg._nvali++;
 
 			bool st1 = diff1 < diff0 ? true : false;
-			bool st2 = (diff1 >= 0.05 && diff1 >= diff0 && ngrid >= 3) ? true : false;
-			if (st1 || !st2) {
-				continue;
-			}
+			bool st2 = (diff1 >= 0.05 && diff1 > diff0 && ngrid >= 1) ? true : false;
+			if (st1 || !st2) { continue; }
 			// DEBUG
 
 			OutSatVeri satdat;
@@ -220,27 +218,18 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 
 int printRovEpoch(IN OutRovStec& rovdat, IN FILE* fp)
 {
+	int nsat = 0, satnum[NUMSYS] = { 0 };
 	char buff[MAXOUTCHARS] = { '\0' }, * p = buff;
 	string tstr = strtime(rovdat._time, 1);
-	int nsat = 0;
+	
 	for (int isys = 0; isys < NUMSYS; isys++) {
+		satnum[isys] = rovdat._satNum[isys];
 		nsat += rovdat._satNum[isys];
 	}
+	if (nsat == 0) { return 0; }
 
-	if (nsat == 0) {
-		return 0;
-	}
-
-	p += sprintf(p, ">%s %s", tstr.c_str(), rovdat._name.c_str());
-	p += sprintf(p, " %2d %2d %2d %2d %2d %2d", nsat,
-		rovdat._satNum[IDX_GPS], rovdat._satNum[IDX_GLO],
-		rovdat._satNum[IDX_GAL], rovdat._satNum[IDX_BDS2], rovdat._satNum[IDX_BDS3]);
-	/*p += sprintf(p, " %2d %2d %2d %2d %2d",
-		rovdat._satRef[IDX_GPS], rovdat._satRef[IDX_GLO],
-		rovdat._satRef[IDX_GAL], rovdat._satRef[IDX_BDS2], rovdat._satRef[IDX_BDS3]);
-	p += sprintf(p, " %5.1f%% %5.1f%% %5.1f%% %5.1f%% %5.1f%%",
-		rovdat._rate[IDX_GPS] * 100.0, rovdat._rate[IDX_GLO] * 100.0,
-		rovdat._rate[IDX_GAL] * 100.0, rovdat._rate[IDX_BDS2] * 100.0, rovdat._rate[IDX_BDS3] * 100.0);*/
+	p += sprintf(p, ">%s %4s", tstr.c_str(), rovdat._name.c_str());
+	p += sprintf(p, " %2d %2d %2d %2d %2d %2d", nsat, satnum[0], satnum[1], satnum[2], satnum[3], satnum[4]);
 	p += sprintf(p, "\n");
 
 	fwrite(buff, (int)(p - buff), sizeof(char), fp);
@@ -250,6 +239,7 @@ int printRovEpoch(IN OutRovStec& rovdat, IN FILE* fp)
 void printSatStec(IN OutSatVeri& dat, IN FILE* fp)
 {
 	char buff[MAXOUTCHARS] = { '\0' }, * p = buff;
+
 	p += sprintf(p, "%c%02d %1d", dat._sys, dat._prn, dat._fixflag);
 	p += sprintf(p, " %4.1f %7.3f %7.3f %7.3f", dat._el, dat._dstec[0], dat._dstec[1], dat._dstec[2]);
 	p += sprintf(p, " %1d %1d %7.3f %7.3f", dat._resflag, dat._outflag, dat._dDstec[0], dat._dDstec[1]);
@@ -264,11 +254,7 @@ void printRovStec(IN vector<OutRovStec> rovs, IN FileFps& rovfps, IN int type)
 
 	for (auto& it : rovs) {
 		string rov = it._name;
-		if (rovfps.find(rov) == rovfps.end())			 { continue; }
-		if (rovfps[rov].find(type) == rovfps[rov].end()) { continue; }
-		if (rovfps[rov][type] == NULL)					 { continue; }
-
-
+		
 		int ns = printRovEpoch(it, rovfps[rov][type]);
 
 		for (int isys = 0; isys < NUMSYS; isys++) {
@@ -298,7 +284,6 @@ void outRovStec(IN Coption& cfg, IN GridInfo& grid, IN SiteAtmos& rovaug, IN Pro
 		rovStecDiff(cfg, grid, rovfps[rov][type], rovaug[sid], stecmod, rovout);
 		rovs.push_back(rovout);
 	}
-
 
 	printRovStec(rovs, rovfps, type);
 

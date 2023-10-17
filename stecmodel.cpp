@@ -412,7 +412,7 @@ int StecModel::markUnhalthSitesRes(IN int sys, IN int prn, OUT int& nsta)
 			}
 
 			double diff = fabs(pSat->second._iono - vmean);
-			if (diff > 1.0 && diff > 4.0 * vrms) {
+			if (diff > 0.5 && diff > 3.0 * vrms) {
 				_badsta.push_back(pos);
 				nbad[0]++;
 				pSta.second._satInfos[sys].erase(prn);
@@ -604,6 +604,10 @@ double StecModel::calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid, OUT 
 
 	for (const auto& pSta : _stecModRes._staRes) {
 		string site = pSta.first;
+		Pos pos(pSta.second._staInfo._blh[0], pSta.second._staInfo._blh[1]);
+		if (find(_badsta.begin(), _badsta.end(), pos) != _badsta.end()) {
+			continue;
+		}
 		auto pSat = pSta.second._satInfos[sys].find(prn);
 		if (pSat == pSta.second._satInfos[sys].end()) {
 			continue;
