@@ -86,7 +86,7 @@ double rovRes(IN double lat, IN double lon, IN GridInfo& grid, IN ProStecModSat*
 	res = modelIDW(stalist, 4, 999000.0, 2, n);
 	res = fabs(res - ERROR_VALUE) < DBL_EPSILON ? 0.0 : res;
 
-	if (n&&stas) {
+	if (n && stas) {
 		int i = 0;
 		for (auto it = cntgrid.begin(); it != cntgrid.end(); ++it) {
 			if (i >= *n) {
@@ -107,6 +107,7 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 	double lonr = roviono._blh[1];
 	double lat0 = cfg._center[0] * D2R;
 	double lon0 = cfg._center[1] * D2R;
+	double THRES_STEC = 0.05;
 	string ROV = roviono._name;
 	bool stat = false;
 	string strt = strtime(stecmod._time, 2);
@@ -160,16 +161,16 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 			nall++;
 
 			// DEBUG
-			if (diff1 <= diff0 && diff1 < 0.05) {
+			if (diff1 <= diff0 && diff1 < THRES_STEC) {
 				cfg._rovstatic[ROV][0]++;
 				cfg._ngoodres++;
 			}
 			else {
-				if (diff1 > diff0 && diff1 >= 0.05) {
+				if (diff1 >= THRES_STEC && (diff1 / fact) > modsat->_QI[1]) {
 					double dtec = diff1 / fact;
 					printf("%s %s %c%02d OUT: res0=%6.3f res1=%6.3f dstec=%6.2f QI=%6.2f el=%5.1f nsta=%2d ngrid=%2d",
 						strt.c_str(), ROV.c_str(), SYS, prn, diff0, diff1, dtec, modsat->_QI[1], el, modsat->_nsta, ngrid);
-					printf("%2d %2d %2d %2d\n", perGrid[0], perGrid[1], perGrid[2], perGrid[3]);
+					printf(" %1d %1d %1d %1d\n", perGrid[0], perGrid[1], perGrid[2], perGrid[3]);
 					cfg._rovstatic[ROV][2]++;
 					cfg._noutl++;
 				}
@@ -181,8 +182,8 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 			cfg._rovstatic[ROV][3]++;
 			cfg._nvali++;
 
-			bool st1 = diff1 < diff0 ? true : false;
-			bool st2 = (diff1 >= 0.05 && diff1 > diff0 && ngrid >= 1) ? true : false;
+			bool st1 = diff1 <= diff0 ? true : false;
+			bool st2 = (diff1 >= THRES_STEC && ngrid >= 1) ? true : false;
 			if (st1 || !st2) { continue; }
 			// DEBUG
 

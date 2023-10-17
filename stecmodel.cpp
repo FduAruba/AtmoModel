@@ -355,7 +355,7 @@ int StecModel::markUnhalthSites(IO vector<stecOBS>& obss)
 			pos._lat = it->_lat;
 			pos._lon = it->_lon;
 			double diff = fabs(it->_stec - vmean);
-			if (diff > 4.0 * vrms) {
+			if (diff > 3.0 * vrms) {
 				_badsta.push_back(pos);
 				nbad[0]++;
 				it = obss.erase(it);
@@ -412,7 +412,7 @@ int StecModel::markUnhalthSitesRes(IN int sys, IN int prn, OUT int& nsta)
 			}
 
 			double diff = fabs(pSat->second._iono - vmean);
-			if (diff > 0.5 && diff > 3.0 * vrms) {
+			if (diff > 1.0 && diff > 4.0 * vrms) {
 				_badsta.push_back(pos);
 				nbad[0]++;
 				pSta.second._satInfos[sys].erase(prn);
@@ -984,6 +984,12 @@ void StecModel::refSatSmoothing(IN Gtime tnow)
 	if (pMod == _stecModList.rend()) {
 		return;
 	}
+	
+	int dt = (int)(tnow - pMod->first);
+	if (dt >= 60) {
+		printf("tnow=%s tlast=%s\n", strtime(tnow, 2).c_str(), strtime(pMod->first, 2).c_str());
+		return;
+	}
 
 	for (int isys = 0; isys < NUMSYS; isys++) {
 		bool isfind = false;
@@ -1063,6 +1069,7 @@ void StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
 				}
 				// 检查建模结果是否连续
 				bool ifcont = checkSatContinuous(atmo._time, isys, pSat, atmo._refSat[isys], grid, satdata);
+
 				// 插入当前历元系统建模结果
 				if (satdata._sat != 0) {
 					_stecModCur._stecmodgnss[isys].emplace(pSat, satdata);

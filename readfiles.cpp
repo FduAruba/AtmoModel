@@ -410,6 +410,9 @@ static int decodeEpoch(IN Gtime tnow, IN char* line, OUT SiteAtmo& sta, OUT Gtim
 		sta._zwd = zwd;
 		sta._std_zwd = std;
 	}
+	else {
+		return 0;
+	}
 	
 	return ns;
 }
@@ -463,7 +466,6 @@ static int decodeSatData(IN Gtime tnow, IN FILE* fp, IN int ns, OUT SatAtmos* sa
 static int decodeData(IN Gtime tnow, OUT vector<Cstation>& sta, OUT SiteAtmos& stas)
 {
 	char buff[MAXCHARS] = { '\0' };
-	Gtime t = { 0 };
 	
 	for (auto& pSta : sta) { // loop stations
 		if (pSta._fp == NULL) {
@@ -471,6 +473,7 @@ static int decodeData(IN Gtime tnow, OUT vector<Cstation>& sta, OUT SiteAtmos& s
 		}
 		if (pSta._fp == NULL) { continue; }
 
+		Gtime t = { 0 };
 		SiteAtmo station;
 		station._name = pSta._name;
 		station._ID = pSta._ID;
