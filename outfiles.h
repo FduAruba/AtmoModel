@@ -19,6 +19,8 @@ public:
 		_el = 0.0;
 		_dstec[0] = _dstec[1] = _dstec[2] = 0.0;
 		_dDstec[0] = _dDstec[1] = 0.0;
+		_QI[0] = _QI[1] = 0.0;
+		_pergrid[0] = _pergrid[1] = _pergrid[2] = _pergrid[3] = 0;
 	}
 	~OutSatVeri(){}
 
@@ -28,9 +30,11 @@ public:
 	int _resflag;
 	int _outflag;
 	int _ngrid;
+	int _pergrid[4];
 	double _el;
 	double _dstec[3];
 	double _dDstec[2];
+	double _QI[2];
 private:
 };
 
@@ -43,7 +47,7 @@ public:
 		_name = "";
 		for (int i = 0; i < NUMSYS; i++) {
 			_satNum[i] = _satRef[i] = 0;
-			_rate[i] = 0.0;
+			//_rate[i] = 0.0;
 		}
 	}
 	~OutRovStec() {}
@@ -52,7 +56,7 @@ public:
 	string _name;
 	int _satNum[NUMSYS];
 	int _satRef[NUMSYS];
-	double _rate[NUMSYS];
+	//double _rate[NUMSYS];
 	map<int, OutSatVeri> _satveris[NUMSYS];
 
 private:

@@ -436,6 +436,11 @@ static int decodeSatData(IN Gtime tnow, IN FILE* fp, IN int ns, OUT SatAtmos* sa
 					continue;
 				}
 
+				// skip BDS3 IGSO
+				if (sys == SYS_BDS3 && (prn == 38 || prn == 39 || prn == 40)) {
+					continue;
+				}
+
 				SatAtmo info;
 				info._sys     = sysstr(sys);
 				info._prn     = prn;

@@ -89,9 +89,9 @@ int main()
 
 	double r1 = (1.0 * config._ngoodres) / (1.0 * config._nvali) * 100.0;
 	double r2 = (1.0 * config._nbadres)  / (1.0 * config._nvali) * 100.0;
-	double r3 = (1.0 * config._noutl)    / (1.0 * config._nvali) * 100.0;
+	double r3 = (1.0 * config._noutres)  / (1.0 * config._nvali) * 100.0;
 	printf("---- nall=%7d ngood_res=%7d nbad_res=%7d nout=%7d %.2f%% %5.2f%% %5.2f%%\n", 
-		config._nvali, config._ngoodres, config._nbadres, config._noutl, r1, r2, r3);
+		config._nvali, config._ngoodres, config._nbadres, config._noutres, r1, r2, r3);
 #endif
 
 	t2 = clock();

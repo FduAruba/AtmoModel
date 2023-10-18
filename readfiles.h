@@ -48,7 +48,7 @@ public:
 		}
 
 		_nlack = 0;
-		_nvali = _ngoodres = _nbadres = _noutl = 0;
+		_nvali = _ngoodres = _nbadres = _noutres = 0;
 	};
 	~Coption() {};
 
@@ -88,7 +88,7 @@ public:
 	int _nvali;
 	int _ngoodres;
 	int _nbadres;
-	int _noutl;
+	int _noutres;
 	map<string, vector<double>> _rovstatic;
 
 private:
