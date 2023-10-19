@@ -987,7 +987,7 @@ void StecModel::refSatSmoothing(IN Gtime tnow)
 	
 	int dt = (int)(tnow - pMod->first);
 	if (dt >= 60) {
-		printf("tnow=%s tlast=%s\n", strtime(tnow, 2).c_str(), strtime(pMod->first, 2).c_str());
+		//printf("tnow=%s tlast=%s\n", strtime(tnow, 2).c_str(), strtime(pMod->first, 2).c_str());
 		return;
 	}
 

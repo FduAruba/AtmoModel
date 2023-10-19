@@ -164,10 +164,10 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 			}
 			else {
 				if (diff1 >= THRES_STEC) {
-					double dtec = diff1 / fact;
-					printf("%s %s %c%02d OUT: res0=%6.3f res1=%6.3f dstec=%6.2f QI=%6.2f el=%5.1f nsta=%2d ngrid=%2d",
+					//double dtec = diff1 / fact;
+					/*printf("%s %s %c%02d OUT: res0=%6.3f res1=%6.3f dstec=%6.2f QI=%6.2f el=%5.1f nsta=%2d ngrid=%2d",
 						strt.c_str(), ROV.c_str(), SYS, prn, diff0, diff1, dtec, modsat->_QI[1], el, modsat->_nsta, ngrid);
-					printf(" %1d %1d %1d %1d\n", perGrid[0], perGrid[1], perGrid[2], perGrid[3]);
+					printf(" %1d %1d %1d %1d\n", perGrid[0], perGrid[1], perGrid[2], perGrid[3]);*/
 					cfg._rovstatic[ROV][2]++;
 					cfg._noutres++;
 				}

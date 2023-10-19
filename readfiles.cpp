@@ -417,7 +417,7 @@ static int decodeEpoch(IN Gtime tnow, IN char* line, OUT SiteAtmo& sta, OUT Gtim
 	return ns;
 }
 
-static int decodeSatData(IN Gtime tnow, IN FILE* fp, IN int ns, OUT SatAtmos* satinfo)
+static int decodeSatData(IN Gtime tnow, IN FILE* fp, IN int ns, OUT SatAtmos* satinfo, OUT int& nbad)
 {
 	char buff[MAXCHARS] = { '\0' };
 	int ret = 0, fix = -1, prn = 0, cnt = 0;
@@ -438,6 +438,7 @@ static int decodeSatData(IN Gtime tnow, IN FILE* fp, IN int ns, OUT SatAtmos* sa
 
 				// skip BDS3 IGSO
 				if (sys == SYS_BDS3 && (prn == 38 || prn == 39 || prn == 40)) {
+					cnt++;
 					continue;
 				}
 
@@ -461,7 +462,10 @@ static int decodeSatData(IN Gtime tnow, IN FILE* fp, IN int ns, OUT SatAtmos* sa
 				}
 
 				cnt++;
-			}			
+			}
+		}
+		else {
+			nbad++;
 		}
 	}
 
@@ -510,10 +514,11 @@ static int decodeData(IN Gtime tnow, OUT vector<Cstation>& sta, OUT SiteAtmos& s
 		if (ns > 0 && tnow == t) {
 			pSta._line.clear();
 			pSta._nepo++;
-			int nc = decodeSatData(tnow, pSta._fp, ns, station._satIon);
-			if (ns != nc) {
+			int nb = 0;
+			int nc = decodeSatData(tnow, pSta._fp, ns, station._satIon, nb);
+			if (nb && nc == 0) {
 				pSta._nbad++;
-				//printf("%s: %s [lack] ns=%2d nc=%2d\n", strtime(tnow, 2).c_str(), pSta._name.c_str(), ns, nc);
+				//printf("%s: %s [lack] ns=%2d nb=%2d\n", strtime(tnow, 2).c_str(), pSta._name.c_str(), ns, nb);
 			}
 		}
 
@@ -537,7 +542,7 @@ extern bool readAugmentData(IN Gtime tnow, IN Coption& config, OUT SiteAtmos& st
 	double rate = (double)nsta / (double)nall * 100.0;
 
 	if (rate < thres) {
-		printf("%s nsta=%3d nrov=%3d %5.1f%%\n", strtime(tnow, 2).c_str(), nsta, nrov, rate);
+		//printf("%s nsta=%3d nrov=%3d %5.1f%%\n", strtime(tnow, 2).c_str(), nsta, nrov, rate);
 		config._nlack++;
 	}
 

@@ -113,7 +113,7 @@ extern bool readConfigFile(IN const char* fname, OUT Coption& config);
 /* @brief decode epoch data */
 static int decodeEpoch(IN Gtime tnow, IN char* line, OUT SiteAtmo& sta, OUT Gtime& tt);
 /* @brief sat data */
-static int decodeSatData(IN Gtime tnow, IN FILE* fp, IN int ns, OUT SatAtmos* satinfo);
+static int decodeSatData(IN Gtime tnow, IN FILE* fp, IN int ns, OUT SatAtmos* satinfo, OUT int& nbad);
 /* @brief entrance of decode data */
 static int decodeData(IN Gtime tnow, OUT vector<Cstation>& sta, OUT SiteAtmos& stas);
 /* @brief read augment data */

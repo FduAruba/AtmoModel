@@ -4,8 +4,36 @@
 
 using namespace std;
 
+void outdebug(IN Coption& config, IN LocalAtmoModel* localMod)
+{
+	for (auto pSta : config._sta) {
+		double r1 = pSta._nepo > 0 ? (double)pSta._nbad / (double)pSta._nepo * 100.0 : 0.0;
+		double r2 = pSta._nepo > 0 ? (double)pSta._nepo / 17280.0 * 100.0 : 0.0;
+		printf("%s #%2d nep=%6d nbad=%6d r1=%6.2f%% r2=%6.2f%%\n", pSta._name.c_str(), pSta._ID, pSta._nepo, pSta._nbad, r1, r2);
+	}
+	printf("nlack=%5d\n", config._nlack);
+	printf("nbadroti=%5d\n", localMod->_nbadroti);
+
+	for (auto it = config._rovstatic.begin(); it != config._rovstatic.end(); ++it) {
+		string rov_t = it->first;
+		double c1 = it->second[0] / it->second[3] * 100.0;
+		double c2 = it->second[1] / it->second[3] * 100.0;
+		double c3 = it->second[2] / it->second[3] * 100.0;
+		printf("%s nall=%7d ngood=%7d nbad=%7d nout=%7d %.2f%% %5.2f%% %5.2f%%\n",
+			rov_t.c_str(), (int)it->second[3], (int)it->second[0], (int)it->second[1], (int)it->second[2],
+			c1, c2, c3);
+	}
+
+	double r1 = (1.0 * config._ngoodres) / (1.0 * config._nvali) * 100.0;
+	double r2 = (1.0 * config._nbadres) / (1.0 * config._nvali) * 100.0;
+	double r3 = (1.0 * config._noutres) / (1.0 * config._nvali) * 100.0;
+	printf("---- nall=%7d ngood=%7d nbad=%7d nout=%7d %.2f%% %5.2f%% %5.2f%%\n",
+		config._nvali, config._ngoodres, config._nbadres, config._noutres, r1, r2, r3);
+}
+
 int main()
 {
+	int dbg = 1;
 	double t1, t2;
 	char fname[MAXCHARS] = "C:\\Users\\shuqh\\Desktop\\rsim.cfg";
 	Coption config;									// 配置文件
@@ -29,6 +57,9 @@ int main()
 	Gtime ts = epoch2time(config._ts);
 	Gtime te = epoch2time(config._te);
 	for (Gtime t = ts; t <= te; t.time += (time_t)config._ti) {
+		string tstr = strtime(t, 2);
+		printf("\r%s: processing...%c", tstr.c_str(), t == te ? '\n' : '\0');
+
 		/* 读取单站数据 */
 		SiteAtmos stas, rovs;
 		if (!readAugmentData(t, config, stas, rovs)) {
@@ -68,34 +99,11 @@ int main()
 
 	}
 
-#if 1
-	for (auto pSta : config._sta) {
-		double r1 = pSta._nepo > 0 ? (double)pSta._nbad / (double)pSta._nepo * 100.0 : 0.0;
-		double r2 = pSta._nepo > 0 ? (double)pSta._nepo / 17280.0 * 100.0 : 0.0;
-		printf("%s #%2d nep=%6d nbad=%6d r1=%6.2f%% r2=%6.2f%%\n", pSta._name.c_str(), pSta._ID, pSta._nepo, pSta._nbad, r1, r2);
-	}
-	printf("nlack=%5d\n", config._nlack);
-	printf("nbadroti=%5d\n", localMod->_nbadroti);
-
-	for (auto it = config._rovstatic.begin(); it != config._rovstatic.end(); ++it) {
-		string rov_t = it->first;
-		double c1 = it->second[0] / it->second[3]*100.0;
-		double c2 = it->second[1] / it->second[3]*100.0;
-		double c3 = it->second[2] / it->second[3]*100.0;
-		printf("%s nall=%7d ngood_res=%7d nbad_res=%7d nout=%7d %.2f%% %5.2f%% %5.2f%%\n",
-			rov_t.c_str(),(int)it->second[3], (int)it->second[0], (int)it->second[1], (int)it->second[2],
-			c1, c2, c3);
-	}
-
-	double r1 = (1.0 * config._ngoodres) / (1.0 * config._nvali) * 100.0;
-	double r2 = (1.0 * config._nbadres)  / (1.0 * config._nvali) * 100.0;
-	double r3 = (1.0 * config._noutres)  / (1.0 * config._nvali) * 100.0;
-	printf("---- nall=%7d ngood_res=%7d nbad_res=%7d nout=%7d %.2f%% %5.2f%% %5.2f%%\n", 
-		config._nvali, config._ngoodres, config._nbadres, config._noutres, r1, r2, r3);
-#endif
+	if (dbg) { outdebug(config, localMod); }
 
 	t2 = clock();
 	printf("\n* Total program time: %4.1f minute\n", (t2 - t1) / CLOCKS_PER_SEC / 60.0);
+
 	/* 释放内存空间 */
 	delete popt; delete grid; delete stecinf; delete stecmod; delete localMod;
 
