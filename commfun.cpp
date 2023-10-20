@@ -351,7 +351,6 @@ extern double modelIDW(IN StaDistIonArr& list, IN int nused, IN double maxdist, 
 	}
 
 	if (n) { *n = cnt; }
-
 	if (cnt < 1) { return ERROR_VALUE; }
 
 	for (int i = 0; i < cnt; i++) {
