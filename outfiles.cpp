@@ -284,11 +284,13 @@ void outRovStec(IN Coption& cfg, IN GridInfo& grid, IN SiteAtmos& rovaug, IN Pro
 			cfg._rovstatic.emplace(rov, vector<double>(4, 0.0));
 		}
 		
+		/* 1.统计验证站的建模误差 */
 		OutRovStec rovout;
 		rovStecDiff(cfg, grid, rovfps[rov][type], rovaug[sid], stecmod, rovout);
 		rovs.push_back(rovout);
 	}
 
+	/* 2.输出误差结果 */
 	printRovStec(rovs, rovfps, type);
 
 	return;
