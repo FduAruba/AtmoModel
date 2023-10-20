@@ -163,7 +163,7 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 				cfg._ngoodres++;
 			}
 			else {
-				if (diff1 >= THRES_STEC) {
+				if (diff1 >= THRES_STEC && stec1 > modsat->_QI[1]) {
 					//double dtec = diff1 / fact;
 					/*printf("%s %s %c%02d OUT: res0=%6.3f res1=%6.3f dstec=%6.2f QI=%6.2f el=%5.1f nsta=%2d ngrid=%2d",
 						strt.c_str(), ROV.c_str(), SYS, prn, diff0, diff1, dtec, modsat->_QI[1], el, modsat->_nsta, ngrid);
@@ -296,6 +296,84 @@ void outRovStec(IN Coption& cfg, IN GridInfo& grid, IN SiteAtmos& rovaug, IN Pro
 	return;
 }
 
+void writeModelHead(IN  Coption& cfg, IN FILE* fp)
+{
+	char buff[MAXOUTCHARS], * p = buff;
+
+	p += sprintf(p, "* Version 1.0              copyright by CMSR                                              #version and copyright\n");
+	p += sprintf(p, "* %13.8lf   %13.8lf                                                           #max latitude and min latitude\n",
+		cfg._latgrid[0], cfg._latgrid[1]);
+	p += sprintf(p, "* %13.8lf   %13.8lf                                                           #max longitude and min longitude\n",
+		cfg._longrid[0], cfg._longrid[1]);
+	p += sprintf(p, "* %13.8lf   %13.8lf                                                           #latitude step and longitude step\n",
+		cfg._step[0], cfg._step[1]);
+	p += sprintf(p, "* %13.8lf   %13.8lf                                                           #latitude center and longitude center\n",
+		cfg._center[0], cfg._center[1]);
+	p += sprintf(p, "* GPS time, number satellite of GREC, number of grids                                     #epoch time\n");
+	p += sprintf(p, "* satellite prn, QI, coeff of stec model, grid value                                      #stec format\n");
+	p += sprintf(p, "* %04d %02d %02d %02d %02d %02d                                                                     #start time\n",
+		cfg._ts[0], cfg._ts[1], cfg._ts[2], cfg._ts[3], cfg._ts[4], cfg._ts[5]);
+	p += sprintf(p, "* %04d %02d %02d %02d %02d %02d                                                                     #end time\n",
+		cfg._te[0], cfg._te[1], cfg._te[2], cfg._te[3], cfg._te[4], cfg._te[5]);
+	p += sprintf(p, "*                                                                                         #end of header\n");
+
+	fwrite(buff, (int)(p - buff), sizeof(char), fp);
+}
+
+void printSatMod(IN int useres, IN ProStecModSat& dat, IN FILE* fp)
+{
+	char buff[MAXOUTCHARS], * p = buff;
+	double qi = 0.0;
+	if (useres && dat._satreslevel > 0) {
+		qi = dat._QI[1];
+	}
+	else {
+		qi = dat._QI[0];
+		//printf("%c%02d no use res qi\n", dat._sys, dat._sat);
+	}
+
+	p += sprintf(p, "%c%02d   %6.3f%15.8f%15.8f%15.8f%15.8f ", 
+		dat._sys, dat._sat, qi, dat._coff[0], dat._coff[1], dat._coff[2], dat._coff[3]);
+
+	for (int i = 0; i < dat._gridNum; i++) {
+		double res = fabs(dat._stecpergrid[i]._stec - ERROR_VALUE) < DBL_EPSILON ? 0.0 : dat._stecpergrid[i]._stec;
+		p += sprintf(p, "%8.3f", res);
+	}
+	p += sprintf(p, "\n");
+
+	fwrite(buff, (int)(p - buff), sizeof(char), fp);
+}
+
+void printEpochMod(IN Gtime tnow, IN ProStecMod& stecmod, IN int ngrid, IN FILE* fp)
+{
+	char buff[MAXOUTCHARS], * p = buff;
+	int ep[6] = { 0 };
+
+	time2epoch(tnow, ep);
+	int ng = stecmod._satNum[0];
+	int nr = stecmod._satNum[1];
+	int ne = stecmod._satNum[2];
+	int nc = stecmod._satNum[3] + stecmod._satNum[4];
+	p += sprintf(p, "> %04d %02d %02d %02d %02d %02d   %02d %02d %02d %02d   %3d\n",
+		ep[0], ep[1], ep[2], ep[3], ep[4], ep[5], ng, nr, ne, nc, ngrid);
+	
+	fwrite(buff, (int)(p - buff), sizeof(char), fp);
+}
+
+void outStecModel(IN Gtime tnow, IN  Coption& cfg, IN GridInfo& grid, IN ProStecMod& stecmod, IN FILE* fp)
+{
+	printEpochMod(tnow, stecmod, grid._gridNum, fp);
+	
+	for (int isys = 0; isys < NUMSYS; isys++) {
+		if (stecmod._satNum[isys] == 0) {
+			continue;
+		}
+		for (auto& iSat : stecmod._stecmod[isys]) {
+			printSatMod(cfg._useres, iSat.second, fp);
+		}
+	}
+}
+
 void createRovFile(IN Coption& cfg, OUT FileFps& fps)
 {
 	if (0 != _access(cfg._pathou.c_str(), 0)) {
@@ -337,5 +415,11 @@ void createRovFile(IN Coption& cfg, OUT FileFps& fps)
 				fps[rov].emplace(4, fp);
 			}
 		}
+	}
+
+	string modpath = cfg._pathou + '\\' + "NRTK.model";
+	FILE* fp = fopen(modpath.c_str(), "w");
+	if (fp != NULL) {
+		fps["MODEL"].emplace(1, fp);
 	}
 }

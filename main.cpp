@@ -79,6 +79,7 @@ int main()
 			localMod->setOption(*popt);
 			localMod->_stecPro.setBasicOption(*popt, config._useres);
 			createRovFile(config, outfps);
+			writeModelHead(config, outfps["MODEL"][1]);
 		}
 		localMod->setRefSites(stas);
 		
@@ -86,6 +87,7 @@ int main()
 		if (config._modeltype & 1) {
 			if (localMod->doStecMod(t, *stecinf, *stecmod)) {
 				outRovStec(config, *grid, rovs, *stecmod, outfps, 1);
+				outStecModel(t, config, *grid, *stecmod, outfps["MODEL"][1]);
 			}
 		}
 		if (config._modeltype & 2) { //TODO: ZTD½¨Ä£
