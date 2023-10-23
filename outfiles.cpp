@@ -157,7 +157,7 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 			double stec0 = diff0 / fact;
 			double stec1 = diff1 / fact;
 			
-			// DEBUG
+			// DEBUG ----------------------------------------------------------------------
 			if (diff1 <= diff0 && diff1 < THRES_STEC) {
 				cfg._rovstatic[ROV][0]++;
 				cfg._ngoodres++;
@@ -182,7 +182,7 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 			bool st1 = diff1 <= diff0 ? true : false;
 			bool st2 = diff1 >= THRES_STEC && stec1 > modsat->_QI[1] && ngrid >= 1 ? true : false;
 			//if (st1 || !st2) { continue; }
-			// DEBUG
+			// DEBUG ----------------------------------------------------------------------
 
 			OutSatVeri satdat;
 			satdat._sys        = SYS;
