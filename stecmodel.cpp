@@ -638,6 +638,79 @@ double StecModel::calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid, OUT 
 	return res;
 }
 
+double StecModel::calcGridTecResMSF(IN int sys, IN int prn, IN GridEach& grid, OUT int* nsta)
+{
+	int ref = _stecModCur._refsat[sys];
+	double res = ERROR_VALUE;
+
+	StaDistIonArr stalist;
+	stalist.reserve(_stecModRes._staRes.size());
+
+	StaDistMSFArr msflist;
+	msflist.reserve(_stecModRes._staRes.size());
+
+	for (const auto& pSta : _stecModRes._staRes) {
+		string site = pSta.first;
+		Pos pos(pSta.second._staInfo._blh[0], pSta.second._staInfo._blh[1]);
+		if (find(_badsta.begin(), _badsta.end(), pos) != _badsta.end()) {
+			continue;
+		}
+		auto pSat = pSta.second._satInfos[sys].find(prn);
+		if (pSat == pSta.second._satInfos[sys].end()) {
+			continue;
+		}
+		// distance
+		double dist = _siteGridDist.getDist(grid._id, site);
+		if (pSat->second._fixflag != 1 && sys == IDX_GPS) {
+			dist *= 2.0;
+		}
+		if (dist > 0.5 * CUT_DIST) {
+			continue;
+		}
+		if (dist < 10.0) {
+			dist = 10.0;
+		}
+		// iono
+		double ion = pSat->second._iono;
+		if (fabs(ion) < DBL_EPSILON && prn != ref) {
+			continue;
+		}
+		stalist.emplace_back(dist, ion);
+
+		StaDistMSF sta = StaDistMSF(site, pos._lat, pos._lon, dist, ion);
+		msflist.emplace_back(sta);
+	}
+	if (stalist.size() < 1) { return ERROR_VALUE; }
+
+	sort(stalist.begin(), stalist.end());
+	sort(msflist.begin(), msflist.end());
+
+	while (msflist.size() > 6) {
+		msflist.pop_back();
+	}
+
+	//printf("\n");
+	int sz = (int)msflist.size();
+	for (int i = 0; i < sz; i++) {
+		double lat_1 = msflist[i]._lat;
+		double lon_1 = msflist[i]._lon;
+		for (int j = 0; j < sz; j++) {
+			double lat_2 = msflist[j]._lat;
+			double lon_2 = msflist[j]._lon;
+			double gij = sphereDist(lat_1, lon_1, lat_2, lon_2);
+			msflist[i]._gij(j) = gij;
+			//printf("%7.2f", gij / 1.0E3);
+		}
+		//printf("\n");
+	}
+
+	
+	res = modelMSF(msflist, sz, 150000.0, nsta);
+	res = modelIDW(stalist, 4, 99000.0, 2, nsta);
+
+	return res;
+}
+
 double StecModel::calcRovTecRes(IN string site, IN const double* blh, IN GridInfo& grid, IN StecModSat& dat, IN int* n)
 {
 	double lat = blh[0], lon = blh[1], res = 0.0;
@@ -747,7 +820,8 @@ bool StecModel::oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys,
 	//int nerr = 0;
 	for (int i = 0; i < grid._gridNum; i++) {
 		int nsta = 0;
-		double res = calcGridTecRes(sys, prn, grid._grids[i], &nsta);
+		//double res = calcGridTecRes(sys, prn, grid._grids[i], &nsta);
+		double res = calcGridTecResMSF(sys, prn, grid._grids[i], &nsta);
 		if (fabs(res - ERROR_VALUE) < DBL_EPSILON) {
 			res = ERROR_VALUE;
 			//nerr++;

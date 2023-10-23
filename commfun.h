@@ -3,6 +3,7 @@
 
 #include "const.h"
 #include "commtime.h"
+#include "comminterface.h"
 
 struct StaDistIon
 {
@@ -11,11 +12,43 @@ struct StaDistIon
 	bool operator < (const StaDistIon& other) const {
 		return dist < other.dist;
 	}
+
 	double dist = 0.0;
 	double ion = 0.0;
-
 };
 typedef vector<StaDistIon> StaDistIonArr;
+
+class StaDistMSF
+{
+public:
+	StaDistMSF() {
+		_site = "";
+		_lat = _lon = 0.0;
+		_g0i = _ion = 0.0;
+		_gij = Eigen::VectorXd::Zero(6);
+	}
+	StaDistMSF(string site, double lat, double lon, double dist, double ion) {
+		_site = site;
+		_lat = lat;
+		_lon = lon;
+		_g0i = dist;
+		_ion = ion;
+		_gij = Eigen::VectorXd::Zero(6);
+	}
+	~StaDistMSF() {}
+	bool operator < (const StaDistMSF& src) const {
+		return _g0i < src._g0i;
+	}
+
+	double _g0i;
+	string _site;
+	double _lat;
+	double _lon;
+	double _ion;
+	Eigen::VectorXd _gij;
+private:
+};
+typedef vector<StaDistMSF> StaDistMSFArr;
 
 /* string */
 extern void modifyPath(IO char* src);
@@ -47,5 +80,6 @@ extern void time2str(IN Gtime t, IN char* s, IN int opt);
 extern void calcMeanStd(IN vector<double> data, OUT double& vmean, OUT double& vstd);
 extern double robust(IN double V, OUT double rms);
 extern double modelIDW(IN StaDistIonArr& list, IN int nused, IN double maxdist, IN int k, OUT int* n);
+extern double modelMSF(IN StaDistMSFArr& list, IN int sz, IN double maxdist, OUT int* n);
 
 #endif

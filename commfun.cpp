@@ -359,3 +359,38 @@ extern double modelIDW(IN StaDistIonArr& list, IN int nused, IN double maxdist, 
 
 	return res;
 }
+
+extern double modelMSF(IN StaDistMSFArr& list, IN int sz, IN double maxdist, OUT int* n)
+{
+	VecXd x = VecXd::Zero(sz + 1);
+	VecXd y = VecXd::Zero(sz + 1);
+	MatXd H = MatXd::Zero(sz + 1, sz + 1);
+
+	for (int i = 0; i < sz; i++) {
+		for (int j = 0; j < sz; j++) {
+			H(i, j) = list[i]._gij(j);
+		}
+		H(sz, i) = H(i, sz) = 1.0;
+		y(i) = i < sz ? list[i]._lon : 0.0;
+	}
+	
+	printf("\n");
+	for (int i = 0; i < sz + 1; i++) {
+		printf("%7.2f", y(i));
+		for (int j = 0; j < sz + 1; j++) {
+			printf("%7.2f", i < sz && j < sz ? H(i, j) / 1.0E3 : H(i, j));
+		}
+		printf("\n");
+	}
+
+	MatXd HTH = H.transpose() * H;
+	MatXd HTy = H.transpose() * y;
+
+	x = H.inverse() * y;
+
+	for (int i = 0; i < sz + 1; i++) {
+		printf("%f", x(i));
+	}
+
+	return 0.0;
+}

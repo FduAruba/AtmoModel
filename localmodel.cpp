@@ -467,12 +467,15 @@ bool LocalAtmoModel::doStecModSys(IN int symbol)
 	if (!_stecPro.setCurSys(_proOption._usesys, symbol)) {
 		return false;
 	}
+
 	/* 数据预处理 */
 	if (!_stecPro.preCheckSatModel(_stecPro._tnow, *groupAtmo, proAtmo)) {
 		return false;
 	}
+
 	/* 初始化STEC模型&残差 */
 	_stecPro.initStecMod(proAtmo);
+
 	/* stec单星建模 */
 	_stecPro.satModEst(proAtmo, _gridinfo);
 
