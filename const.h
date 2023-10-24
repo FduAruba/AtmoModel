@@ -134,6 +134,8 @@ const double FREQ_ALL[NUMSYS][NFREQ] = {{FREQ1_GPS,FREQ2_GPS,FREQ5_GPS},
 #define CUT_STEC_RES         0.5/0.16          // cut stec residual
 #define CUT_DIST             3.0E5             // cut distance from site to grid
 #define ERROR_VALUE          9999.999          // stec error value
+#define FIT_IDW              0                 // IDW fitting
+#define FIT_MSF              1                 // MSF fitting
 
 
 //const double CUT_DIST     = 300.0 * 1E+3;

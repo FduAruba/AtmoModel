@@ -360,37 +360,49 @@ extern double modelIDW(IN StaDistIonArr& list, IN int nused, IN double maxdist, 
 	return res;
 }
 
-extern double modelMSF(IN StaDistMSFArr& list, IN int sz, IN double maxdist, OUT int* n)
+extern double modelMSF(IN StaDistMSFArr& list, IN int sz)
 {
-	VecXd x = VecXd::Zero(sz + 1);
-	VecXd y = VecXd::Zero(sz + 1);
-	MatXd H = MatXd::Zero(sz + 1, sz + 1);
+	int iter = 0;
+	bool stat = true;
+	double res = 0.0;
+	VecXd a  = VecXd::Zero(sz + 1);
+	VecXd x  = VecXd::Zero(sz + 1);
+	VecXd dx = VecXd::Zero(sz + 1);
+	VecXd y  = VecXd::Zero(sz + 1);
+	VecXd v  = VecXd::Zero(sz + 1);
+	MatXd H  = MatXd::Zero(sz + 1, sz + 1);
 
 	for (int i = 0; i < sz; i++) {
 		for (int j = 0; j < sz; j++) {
-			H(i, j) = list[i]._gij(j);
+			H(i, j) = list[i]._gij(j) / 1.0E3;
 		}
 		H(sz, i) = H(i, sz) = 1.0;
-		y(i) = i < sz ? list[i]._lon : 0.0;
+		y(i) = i < sz ? list[i]._ion : 0.0;
+		v(i) = i < sz ? list[i]._ion : 0.0;
+		a(i) = list[i]._g0i / 1.0E3;
 	}
-	
-	printf("\n");
-	for (int i = 0; i < sz + 1; i++) {
-		printf("%7.2f", y(i));
-		for (int j = 0; j < sz + 1; j++) {
-			printf("%7.2f", i < sz && j < sz ? H(i, j) / 1.0E3 : H(i, j));
+	a(sz) = 1.0;
+
+	for (iter = 0; iter < 10; iter++) {
+		if (H.fullPivLu().isInvertible()) {
+			dx = H.lu().solve(v);
 		}
-		printf("\n");
+		else {
+			stat = false;
+			break;
+		}
+		x += dx;
+		v = y - H * x;
+
+		if (dx.dot(dx) < 1.0E-4) {
+			break;
+		}
 	}
 
-	MatXd HTH = H.transpose() * H;
-	MatXd HTy = H.transpose() * y;
-
-	x = H.inverse() * y;
-
-	for (int i = 0; i < sz + 1; i++) {
-		printf("%f", x(i));
+	if (iter >= 10 || stat == false) {
+		return ERROR_VALUE;
 	}
 
-	return 0.0;
+	res = a.dot(x);
+	return res;
 }

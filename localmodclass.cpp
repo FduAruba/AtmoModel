@@ -154,6 +154,7 @@ void ProOption::deepcopy(IN ProOption& src)
 	}
 	_maxsatres    = src._maxsatres;
 	_algotype     = src._algotype;
+	_fittype      = src._fittype;
 	_diffmode     = src._diffmode;
 	_refsatsmooth = src._refsatsmooth;
 	_minel        = src._minel;

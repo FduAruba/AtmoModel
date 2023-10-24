@@ -34,6 +34,7 @@ void StecModel::settime(IN const Gtime t)
 void StecModel::setBasicOption(IN ProOption& opt, IN int res)
 {
 	_useres   = res;
+	_fittype  = opt._fittype;
 	_minel    = opt._minel;
 	_qi_multi = opt._qimulti;
 	_qi_base  = opt._qibase;
@@ -643,9 +644,6 @@ double StecModel::calcGridTecResMSF(IN int sys, IN int prn, IN GridEach& grid, O
 	int ref = _stecModCur._refsat[sys];
 	double res = ERROR_VALUE;
 
-	StaDistIonArr stalist;
-	stalist.reserve(_stecModRes._staRes.size());
-
 	StaDistMSFArr msflist;
 	msflist.reserve(_stecModRes._staRes.size());
 
@@ -675,39 +673,34 @@ double StecModel::calcGridTecResMSF(IN int sys, IN int prn, IN GridEach& grid, O
 		if (fabs(ion) < DBL_EPSILON && prn != ref) {
 			continue;
 		}
-		stalist.emplace_back(dist, ion);
 
-		StaDistMSF sta = StaDistMSF(site, pos._lat, pos._lon, dist, ion);
+		StaDistMSF sta(site, pos._lat, pos._lon, dist, ion);
 		msflist.emplace_back(sta);
 	}
-	if (stalist.size() < 1) { return ERROR_VALUE; }
-
-	sort(stalist.begin(), stalist.end());
+	if (msflist.size() < 3) { return ERROR_VALUE; }
 	sort(msflist.begin(), msflist.end());
 
 	while (msflist.size() > 6) {
 		msflist.pop_back();
 	}
 
-	//printf("\n");
 	int sz = (int)msflist.size();
+	if (nsta) { *nsta = sz; }
+
 	for (int i = 0; i < sz; i++) {
 		double lat_1 = msflist[i]._lat;
 		double lon_1 = msflist[i]._lon;
+
 		for (int j = 0; j < sz; j++) {
 			double lat_2 = msflist[j]._lat;
 			double lon_2 = msflist[j]._lon;
+
 			double gij = sphereDist(lat_1, lon_1, lat_2, lon_2);
-			msflist[i]._gij(j) = gij;
-			//printf("%7.2f", gij / 1.0E3);
+			msflist[i]._gij(j) = gij < 10.0 ? 10.0 : gij;
 		}
-		//printf("\n");
 	}
 
-	
-	res = modelMSF(msflist, sz, 150000.0, nsta);
-	res = modelIDW(stalist, 4, 99000.0, 2, nsta);
-
+	res = modelMSF(msflist, sz);
 	return res;
 }
 
@@ -728,7 +721,7 @@ double StecModel::calcRovTecRes(IN string site, IN const double* blh, IN GridInf
 		double dist = _siteGridDist.getDist(i, site);
 		dist = dist < 10.0 ? 10.0 : dist;
 
-		if (onegrid.isVaild(lat, lon, grid._step[0], grid._step[1])) {
+		if (onegrid.isVaild(lat, lon, grid._step[0] * D2R, grid._step[1] * D2R)) {
 			stalist.emplace_back(dist, ion);
 		}
 	}
@@ -737,6 +730,66 @@ double StecModel::calcRovTecRes(IN string site, IN const double* blh, IN GridInf
 	stable_sort(stalist.begin(), stalist.end());
 
 	res = modelIDW(stalist, 4, 70000.0, 2, n);
+	res = fabs(res - ERROR_VALUE) < DBL_EPSILON ? 0.0 : res;
+
+	return res;
+}
+
+double StecModel::calcRovTecResMSF(IN string site, IN const double* blh, IN GridInfo& grid, IN StecModSat& dat, IN int* n)
+{
+	double lat = blh[0], lon = blh[1], res = 0.0;
+	//StaDistIonArr stalist;
+	//stalist.reserve(dat._gridNum);
+	StaDistMSFArr msflist;
+	msflist.reserve(dat._gridNum);
+
+	for (int i = 1; i <= dat._gridNum; i++) {
+		const auto& onegrid = dat._stecpergrid[i];
+
+		if (!onegrid.isVaild(lat, lon, grid._step[0] * D2R, grid._step[1] * D2R)) {
+			continue;
+		}
+
+		double ion = onegrid._stec;
+		if (fabs(ion - ERROR_VALUE) < DBL_EPSILON) {
+			continue;
+		}
+
+		double dist = _siteGridDist.getDist(i, site);
+		dist = dist < 10.0 ? 10.0 : dist;
+
+		//stalist.emplace_back(dist, ion);
+		StaDistMSF grd(to_string(i), onegrid._lat, onegrid._lon, dist, ion);
+		msflist.emplace_back(grd);
+	}
+
+	//if (stalist.size() < 1) { return 0.0; }
+	//stable_sort(stalist.begin(), stalist.end());
+	if (msflist.size() < 3) { return 0.0; }
+	sort(msflist.begin(), msflist.end());
+
+	/*while (msflist.size() > 6) {
+		msflist.pop_back();
+	}*/
+
+	int sz = (int)msflist.size();
+	if (n) { *n = sz; }
+
+	for (int i = 0; i < sz; i++) {
+		double lat_1 = msflist[i]._lat;
+		double lon_1 = msflist[i]._lon;
+
+		for (int j = 0; j < sz; j++) {
+			double lat_2 = msflist[j]._lat;
+			double lon_2 = msflist[j]._lon;
+
+			double gij = sphereDist(lat_1, lon_1, lat_2, lon_2);
+			msflist[i]._gij(j) = gij < 10.0 ? 10.0 : gij;
+		}
+	}
+
+	//res = modelIDW(stalist, 4, 70000.0, 2, n);
+	res = modelMSF(msflist, sz);
 	res = fabs(res - ERROR_VALUE) < DBL_EPSILON ? 0.0 : res;
 
 	return res;
@@ -817,14 +870,25 @@ bool StecModel::oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys,
 
 	/* ±£´æÊý¾Ý */
 	dat._gridNum = grid._gridNum;
-	//int nerr = 0;
 	for (int i = 0; i < grid._gridNum; i++) {
 		int nsta = 0;
-		//double res = calcGridTecRes(sys, prn, grid._grids[i], &nsta);
-		double res = calcGridTecResMSF(sys, prn, grid._grids[i], &nsta);
+		
+		double res = 0.0;
+		switch (_fittype)
+		{
+		case FIT_IDW: {
+			res = calcGridTecRes(sys, prn, grid._grids[i], &nsta);
+			break;
+		}
+		case FIT_MSF: {
+			res = calcGridTecResMSF(sys, prn, grid._grids[i], &nsta);
+			break;
+		}
+		default: { break; }
+		}
+
 		if (fabs(res - ERROR_VALUE) < DBL_EPSILON) {
 			res = ERROR_VALUE;
-			//nerr++;
 		}
 
 		auto& stecgrid = dat._stecpergrid[i + 1];
@@ -834,10 +898,8 @@ bool StecModel::oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys,
 		stecgrid._lon = grid._grids[i]._lon;
 		stecgrid._rms = 0.0;
 		stecgrid._nsta = nsta;
-		//printf("%c%02d #%02d Res:%8.3f\n", SYS, prn, i + 1, res);
 	}
-	//printf("%02d\n", nerr);
-
+	
 	return true;
 }
 
@@ -878,7 +940,21 @@ bool StecModel::recalculateQI(IN AtmoEpoch& atmo, IN int sys, IN int prn, IN Gri
 		double dlon = pos._lon - grid._center[1] * D2R;
 		double stec = dat._coeff[0] + dat._coeff[1] * dlat + dat._coeff[2] * dlon;
 		int ngrid = 0;
-		double stecres = calcRovTecRes(site, atmosta._staInfo._blh, grid, dat, &ngrid);
+
+		double stecres = 0.0;
+		switch (_fittype)
+		{
+		case FIT_IDW: {
+			stecres = calcRovTecRes(site, atmosta._staInfo._blh, grid, dat, &ngrid);
+			break;
+		}
+		case FIT_MSF: {
+			stecres = calcRovTecResMSF(site, atmosta._staInfo._blh, grid, dat, &ngrid);
+			break;
+		}
+		default: {break; }
+		}
+
 		double absdiff0 = fabs(pSat->second._iono - stec);
 		double absdiff1 = fabs(pSat->second._iono - stec - stecres);
 

@@ -59,7 +59,7 @@ int main()
 	Gtime te = epoch2time(config._te);
 	for (Gtime t = ts; t <= te; t.time += (time_t)config._ti) {
 		string tstr = strtime(t, 2);
-		printf("\r%s: processing...%c", tstr.c_str(), t == te ? '\n' : '\0');
+		//printf("\r%s: processing...%c", tstr.c_str(), t == te ? '\n' : '\0');
 
 		/* 读取单站数据 */
 		SiteAtmos stas, rovs;

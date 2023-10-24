@@ -233,6 +233,13 @@ static bool configModel(IN FILE* fp, OUT Coption& config)
 					return false;
 				}
 			}
+			else if (strstr(buff, "fittype")) {
+				ret = sscanf(p, "%d", &config._fittype);
+				if (ret != 1) {
+					printf("***ERROR: read config fittype fail!\n");
+					return false;
+				}
+			}
 			else if (strstr(buff, "minel")) {
 				ret = sscanf(p, "%lf", &config._minel);
 				if (ret != 1) {
@@ -585,6 +592,7 @@ extern void movOption(IN Coption& config, OUT ProOption& opt)
 	opt._qicoeff   = config._qicoeff;
 	opt._refsatsmooth = config._refsatsmooth;
 	opt._algotype  = config._algotype;
+	opt._fittype   = config._fittype;
 }
 
 extern bool movGrids(IN Coption& config, OUT GridInfo& grid)

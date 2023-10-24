@@ -35,6 +35,7 @@ public:
 
 		_algotype = 1;
 		_modeltype = 1;
+		_fittype = 1;
 		_minel = 15.0;
 		_qimulti = 0.68;
 		_qibase = 0.0;
@@ -71,6 +72,7 @@ public:
 	/* model setting */
 	int _algotype;				// [0]mixed [1]fixed
 	int _modeltype;				// [1]STEC [2]ZTD [4]STD [8]VTEC
+	int _fittype;				// [0]IDW [1]MSF
 	double _minel;				// minimum elevation angle (deg)
 	double _qimulti;			// QI for muti-system
 	double _qibase;				// QI for base

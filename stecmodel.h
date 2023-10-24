@@ -140,6 +140,7 @@ public:
 	{
 		_tnow = { 0 };
 		_useres = 1;
+		_fittype = 0;
 		_cursys = SYS_NONE;
 		for (int i = 0; i < NUMSYS; i++) {
 			_fixsys[i] = 0;
@@ -183,6 +184,7 @@ public:
 	double calcGridTecRes(IN int sys, IN int prn, IN GridEach& grid, OUT int* nsta);
 	double calcGridTecResMSF(IN int sys, IN int prn, IN GridEach& grid, OUT int* nsta);
 	double calcRovTecRes(IN string site, IN const double* blh, IN GridInfo& grid, IN StecModSat& dat, IN int* n);
+	double calcRovTecResMSF(IN string site, IN const double* blh, IN GridInfo& grid, IN StecModSat& dat, IN int* n);
 	bool oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys, IN int prn, IO StecModSat& dat);
 	bool recalculateQI(IN AtmoEpoch& atmo, IN int sys, IN int prn, IN GridInfo& grid, OUT StecModSat& dat);
 	void satModAndRes(IN int id, IN double dlat, IN double dlon, IN const StecModSat& satdat, OUT double& stec, OUT double& res);
@@ -194,6 +196,7 @@ public:
 	/* basic option */
 	Gtime _tnow;							// current time
 	int _useres;							// use grid resudial or not [0]no use [1]use
+	int _fittype;							// fitting model [0]IDW [1]MSF
 	int _cursys;							// current system *default: SYS_NONE
 	int _fixsys[NUMSYS];					// fix system or not *default: [0,0,0,0,0]
 	int _sysidx[NUMSYS];					// system index [1,2,4,8,16]

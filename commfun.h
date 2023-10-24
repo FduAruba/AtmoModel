@@ -80,6 +80,6 @@ extern void time2str(IN Gtime t, IN char* s, IN int opt);
 extern void calcMeanStd(IN vector<double> data, OUT double& vmean, OUT double& vstd);
 extern double robust(IN double V, OUT double rms);
 extern double modelIDW(IN StaDistIonArr& list, IN int nused, IN double maxdist, IN int k, OUT int* n);
-extern double modelMSF(IN StaDistMSFArr& list, IN int sz, IN double maxdist, OUT int* n);
+extern double modelMSF(IN StaDistMSFArr& list, IN int sz);
 
 #endif
