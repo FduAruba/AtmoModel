@@ -8,6 +8,6 @@
 2023/10/20:
 
 + dev 1.0.0: 
-	+ STEC ==polynomial coefficient modeling== & ==grid node residual fitting== complete;
+	+ STEC polynomial coefficient modeling & grid node residual fitting complete;
 	+ support system: GPS/GLO/GAL/BDS2/BDS3;
-	+ the external accuracy verification at 04:00 UT - 08:00 UT and 16:00 UT - 20:00 UT is much bigger than other time,  the probable reason for this is that the ionosphere is more active during these times;
+	+ the external accuracy verification at [06:00 UT-10:00 UT] and [16:00 UT-20:00 UT] is much bigger than other time,  the probable reason for this is that the ionosphere is more active during these times;
