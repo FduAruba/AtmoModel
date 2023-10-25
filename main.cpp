@@ -4,6 +4,56 @@
 
 using namespace std;
 
+void rovRoti(IN Gtime tnow, IN SiteAtmos& rovinf, OUT StaRotiMap& rovs)
+{
+	for (auto& pSta : rovinf) {
+		string site = pSta.second._name;
+
+		if (rovs.find(site) == rovs.end()) {
+			StaRoti sta(site);
+			sta.proRoti(tnow, pSta.second);
+			rovs.emplace(site, sta);
+		}
+		else {
+			StaRoti& sta = rovs[site];
+			sta.proRoti(tnow, pSta.second);
+		}
+	}
+}
+
+void outRovRoti(IN Gtime tnow, IN StaRotiMap& rovs, OUT FileFps& fps)
+{
+	char buff[MAXOUTCHARS] = { '\0' }, * p = buff;
+	string tstr = strtime(tnow, 1);
+
+	for (auto& pSta : rovs) {
+		string site = pSta.first;
+		p += sprintf(p, ">%s:\n", tstr.c_str());
+		int n = 0;
+
+		for (int isys = 0; isys < NUMSYS; isys++) {
+			char SYS = idx2sys(isys);
+
+			for (auto& pSat : pSta.second._rotis[isys]) {
+				int prn = pSat.first;
+				Gtime t = pSat.second._tlast;
+				double rot = pSat.second._rot.rbegin()->second;
+				double roti = pSat.second._roti;
+
+				if (t == tnow && roti != 0.0) {
+					p += sprintf(p, "%c%02d %8.2f %8.2f\n", SYS, prn, rot, roti);
+					n++;
+				}
+			}
+		}
+
+		if (n > 0) {
+			fwrite(buff, (int)(p - buff), sizeof(char), fps[site][5]);
+		}
+		p = buff;
+	}
+}
+
 void outdebug(IN Coption& config, IN LocalAtmoModel* localMod)
 {
 	for (auto pSta : config._sta) {
@@ -44,7 +94,8 @@ int main()
 	ProStecMod* stecmod      = new ProStecMod;		// stec建模
 	LocalAtmoModel* localMod = new LocalAtmoModel;	// 大气建模类
 	FileFps outfps;
-
+	StaRotiMap stamap;
+	
 	t1 = clock();
 	/* 读取配置文件 */
 	if (readConfigFile(fname, config)) {
@@ -83,6 +134,10 @@ int main()
 			writeModelHead(config, outfps["MODEL"][1]);
 		}
 		localMod->setRefSites(stas);
+
+		/* 验证站ROTI计算输出 */
+		rovRoti(t, rovs, stamap);
+		outRovRoti(t, stamap, outfps);
 		
 		/* 大气建模 */
 		if (config._modeltype & 1) {
@@ -97,9 +152,6 @@ int main()
 		}
 		if (config._modeltype & 8) { //TODO: VTEC建模
 		}
-
-		/* 输出建模结果 */
-
 	}
 
 	if (dbg) { outdebug(config, localMod); }

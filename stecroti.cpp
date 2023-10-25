@@ -10,8 +10,8 @@ RotKey::RotKey(IN string site, IN char system, IN int prn)
 double SatRot::calcROTI()
 {
 	_roti = 0.0;
-
 	int MAXITER = 10, rotSize = 0;
+
 	for (int i = 0; i < MAXITER; i++) {
 		bool brk = true;
 		if ((rotSize = (int)_rotArray.size()) == 0) {
@@ -132,10 +132,6 @@ int StecRoti::calcROTI(IN Gtime tnow)
 			}
 		}
 	}
-
-	/*if (_badroti > 0) {
-		printf("%s %3d\n", strtime(tnow, 2).c_str(), _badroti);
-	}*/
 
 	return cnt;
 }

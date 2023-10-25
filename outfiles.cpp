@@ -489,6 +489,12 @@ void createRovFile(IN Coption& cfg, OUT FileFps& fps)
 				fps[rov].emplace(4, fp);
 			}
 		}
+
+		string rotipath = rovpath + ".roti";
+		FILE* fp = fopen(rotipath.c_str(), "w");
+		if (fp != NULL) {
+			fps[rov].emplace(5, fp);
+		}
 	}
 
 	string modpath = cfg._pathou + '\\' + "NRTK.model";

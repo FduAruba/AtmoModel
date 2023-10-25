@@ -198,3 +198,97 @@ double SiteGridDist::getDist(IN int id, IN string site)
 	}
 	return 0.0;
 }
+
+void SatRoti::reinit(IN Gtime tnow, IN double stec)
+{
+	_stec.clear();
+	_rot.clear();
+	_roti = 0.0;
+	_tlast = tnow;
+	_stec.emplace(tnow, stec);
+}
+
+double SatRoti::proRoti(IN Gtime tnow, IN SatAtmo& satinf)
+{
+	_rot.clear();
+	_tlast = tnow;
+	
+	if (_stec.size() < 1) {
+		_stec.emplace(tnow, satinf._iono);
+		return 0.0;
+	}
+	
+	while (_stec.size() > 10) {
+		_stec.erase(_stec.begin());
+	}
+	
+	Gtime tlast = _stec.rbegin()->first;
+	string t0 = strtime(tlast, 2);
+	string t1 = strtime(tnow, 2);
+	if (tnow <= tlast || fabs(tnow - tlast) > 120.0) {
+		this->reinit(tnow, satinf._iono);
+		//printf("tnow=%s tlast=%s \n", t1.c_str(), t0.c_str());
+		return 0.0;
+	}
+
+	for (auto it = _stec.begin(); it != _stec.end();) {
+		if (fabs(tnow - it->first) >= 240.0) {
+			it = _stec.erase(it);
+		}
+		break;
+	}
+
+	_stec.emplace(tnow, satinf._iono);
+
+	for (auto it = _stec.begin(); it != _stec.end(); ++it) {
+		auto in = it; ++in;
+		if (in != _stec.end()) {
+			double rot = (in->second - it->second) * 60.0 / (in->first - it->first);
+			_rot.emplace(in->first, rot);
+		}
+	}
+
+	int sz = _rot.size();
+	double avgsum = 0.0, argsum = 0.0, roti = 0.0;
+	for (auto it = _rot.begin(); it != _rot.end(); ++it) {
+		avgsum += it->second;
+	}
+	avgsum /= sz;
+	for (auto it = _rot.begin(); it != _rot.end(); ++it) {
+		argsum += pow(it->second - avgsum, 2);
+	}
+	roti = sqrt(argsum / sz);
+
+	_roti = roti;
+
+	return roti;
+}
+
+void StaRoti::proRoti(IN Gtime tnow, IN SiteAtmo& siteinf)
+{
+	string tstr = strtime(tnow, 2);
+	
+	for (int isys = 0; isys < NUMSYS; isys++) {
+		char SYS = idx2sys(isys);
+	
+		if (siteinf._satIon[isys].size() <= 0) {
+			continue;
+		}
+
+		for (auto& pSat : siteinf._satIon[isys]) {
+			int prn = pSat.first;
+			
+			if (_rotis[isys].find(prn) == _rotis[isys].end()) {
+				SatRoti sat(tnow, prn);
+				double roti = sat.proRoti(tnow, pSat.second);
+				_rotis[isys].emplace(prn, sat);
+				//printf("%s %c%02d %5.2f\n", tstr.c_str(), SYS, prn, roti);
+			}
+			else {
+				SatRoti& sat = _rotis[isys].find(prn)->second;
+				double roti = sat.proRoti(tnow, pSat.second);
+				//printf("%s %c%02d %5.2f\n", tstr.c_str(), SYS, prn, roti);
+			}
+		}
+	}
+}

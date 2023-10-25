@@ -538,5 +538,52 @@ public:
 private:
 };
 
+class SatRoti
+{
+public:
+	SatRoti()
+	{
+		_prn = 0;
+		_roti = 0.0;
+		_tlast = { 0 };
+	}
+	SatRoti(IN Gtime tnow, IN int prn)
+	{
+		_prn = prn;
+		_roti = 0.0;
+		_tlast = tnow;
+	}
+	~SatRoti() {}
+	void reinit(IN Gtime tnow, IN double stec);
+	double proRoti(IN Gtime tnow, IN SatAtmo& satinf);
+
+	int _prn;
+	double _roti;
+	Gtime _tlast;
+	map<Gtime, double> _stec;
+	map<Gtime, double> _rot;
+private:
+};
+
+class StaRoti
+{
+public:
+	StaRoti()
+	{
+		_site = "";
+	}
+	StaRoti(IN string site)
+	{
+		_site = site;
+	}
+	~StaRoti() {}
+	void proRoti(IN Gtime tnow, IN SiteAtmo& siteinf);
+	
+	string _site;
+	map<int, SatRoti> _rotis[NUMSYS];
+private:
+};
+typedef map<string, StaRoti> StaRotiMap;
+
 #endif // !LOCAL_MOD_CLASS_H
 
