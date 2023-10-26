@@ -169,7 +169,7 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 	double lonr = roviono._blh[1];
 	double lat0 = cfg._center[0] * D2R;
 	double lon0 = cfg._center[1] * D2R;
-	double THRES_STEC = 0.1;
+	double THRES_RES = 0.05;
 	string ROV = roviono._name;
 	bool stat = false;
 	string strt = strtime(stecmod._time, 2);
@@ -233,12 +233,12 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 			double stec1 = diff1 / fact;
 			
 			// DEBUG ----------------------------------------------------------------------
-			if (diff1 <= diff0 && diff1 < THRES_STEC) {
+			if (diff1 <= diff0 && diff1 < THRES_RES) {
 				cfg._rovstatic[ROV][0]++;
 				cfg._ngoodres++;
 			}
 			else {
-				if (diff1 >= THRES_STEC && stec1 > modsat->_QI[1]) {
+				if (diff1 >= THRES_RES && stec1 > modsat->_QI[1]) {
 					/*printf("%s %s %c%02d OUT: res0=%6.3f res1=%6.3f dstec=%6.2f QI=%6.2f el=%5.1f nsta=%2d ngrid=%2d",
 						strt.c_str(), ROV.c_str(), SYS, prn, diff0, diff1, stec1, modsat->_QI[1], el, modsat->_nsta, ngrid);
 					printf(" %1d %1d %1d %1d\n", perGrid[0], perGrid[1], perGrid[2], perGrid[3]);*/
@@ -254,7 +254,7 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 			cfg._nvali++;
 
 			bool st1 = diff1 <= diff0 ? true : false;
-			bool st2 = diff1 >= THRES_STEC && stec1 > modsat->_QI[1] && ngrid >= 1 ? true : false;
+			bool st2 = diff1 >= THRES_RES && stec1 > modsat->_QI[1] && ngrid >= 1 ? true : false;
 			//if (st1 || !st2) { continue; }
 			// DEBUG ----------------------------------------------------------------------
 
