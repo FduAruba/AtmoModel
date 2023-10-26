@@ -451,7 +451,7 @@ void outStecModel(IN Gtime tnow, IN  Coption& cfg, IN GridInfo& grid, IN ProStec
 void createRovFile(IN Coption& cfg, OUT FileFps& fps)
 {
 	if (0 != _access(cfg._pathou.c_str(), 0)) {
-		if (!_mkdir(cfg._pathou.c_str())) {
+		if (_mkdir(cfg._pathou.c_str()) == -1) {
 			printf("***ERROR: create dir %s failed, please check it!\n", cfg._pathou.c_str());
 			return;
 		}
