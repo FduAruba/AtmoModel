@@ -23,34 +23,36 @@ void rovRoti(IN Gtime tnow, IN SiteAtmos& rovinf, OUT StaRotiMap& rovs)
 
 void outRovRoti(IN Gtime tnow, IN StaRotiMap& rovs, OUT FileFps& fps)
 {
-	char buff[MAXOUTCHARS] = { '\0' }, * p = buff;
+	char buff0[MAXCHARS] = { '\0' }, * p = buff0;
+	char buff1[MAXOUTCHARS] = { '\0' }, * q = buff1;
 	string tstr = strtime(tnow, 1);
 
 	for (auto& pSta : rovs) {
 		string site = pSta.first;
-		p += sprintf(p, ">%s:\n", tstr.c_str());
-		int n = 0;
 
+		int n = 0;
 		for (int isys = 0; isys < NUMSYS; isys++) {
 			char SYS = idx2sys(isys);
 
 			for (auto& pSat : pSta.second._rotis[isys]) {
 				int prn = pSat.first;
 				Gtime t = pSat.second._tlast;
-				double rot = pSat.second._rot.rbegin()->second;
+				double rot = pSat.second._rot.size() > 0 ? pSat.second._rot.rbegin()->second : 0.0;
 				double roti = pSat.second._roti;
 
 				if (t == tnow && roti != 0.0) {
-					p += sprintf(p, "%c%02d %8.2f %8.2f\n", SYS, prn, rot, roti);
+					q += sprintf(q, "%c%02d %8.2f %8.2f\n", SYS, prn, rot, roti);
 					n++;
 				}
 			}
 		}
 
 		if (n > 0) {
-			fwrite(buff, (int)(p - buff), sizeof(char), fps[site][5]);
+			p += sprintf(p, ">%s %02d\n", tstr.c_str(), n);
+			fwrite(buff0, (int)(p - buff0), sizeof(char), fps[site][5]);
+			fwrite(buff1, (int)(q - buff1), sizeof(char), fps[site][5]);
 		}
-		p = buff;
+		p = buff0; q = buff1;
 	}
 }
 
@@ -110,7 +112,7 @@ int main()
 	Gtime te = epoch2time(config._te);
 	for (Gtime t = ts; t <= te; t.time += (time_t)config._ti) {
 		string tstr = strtime(t, 2);
-		//printf("\r%s: processing...%c", tstr.c_str(), t == te ? '\n' : '\0');
+		printf("\r%s: processing...%c", tstr.c_str(), t == te ? '\n' : '\0');
 
 		/* 读取单站数据 */
 		SiteAtmos stas, rovs;
