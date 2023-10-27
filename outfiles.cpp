@@ -238,7 +238,7 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 				cfg._ngoodres++;
 			}
 			else {
-				if (diff1 >= THRES_RES && stec1 > modsat->_QI[1]) {
+				if (diff1 >= THRES_RES) {
 					/*printf("%s %s %c%02d OUT: res0=%6.3f res1=%6.3f dstec=%6.2f QI=%6.2f el=%5.1f nsta=%2d ngrid=%2d",
 						strt.c_str(), ROV.c_str(), SYS, prn, diff0, diff1, stec1, modsat->_QI[1], el, modsat->_nsta, ngrid);
 					printf(" %1d %1d %1d %1d\n", perGrid[0], perGrid[1], perGrid[2], perGrid[3]);*/
@@ -261,7 +261,9 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 			OutSatVeri satdat;
 			satdat._sys        = SYS;
 			satdat._prn        = prn;
+			satdat._nsta       = modsat->_nsta;
 			satdat._el         = el;
+			satdat._elm        = modsat->_ele;
 			satdat._fixflag    = pSat.second._fixflag;
 			satdat._ngrid      = ngrid;
 			satdat._pergrid[0] = perGrid[0];
@@ -321,7 +323,8 @@ void printSatStec(IN OutSatVeri& dat, IN FILE* fp)
 	p += sprintf(p, " %4.1f %7.3f %7.3f %7.3f", dat._el, dat._dstec[0], dat._dstec[1], dat._dstec[2]);
 	p += sprintf(p, " %1d %1d %5.2f %5.2f", dat._resflag, dat._outflag, dat._dDstec[0], dat._dDstec[1]);
 	p += sprintf(p, " %5.2f %5.2f", dat._QI[0], dat._QI[1]);
-	p += sprintf(p, " %1d %1d %1d %1d %1d\n", dat._ngrid, dat._pergrid[0], dat._pergrid[1], dat._pergrid[2], dat._pergrid[3]);
+	p += sprintf(p, " %1d %1d %1d %1d %1d", dat._ngrid, dat._pergrid[0], dat._pergrid[1], dat._pergrid[2], dat._pergrid[3]);
+	p += sprintf(p, " %2d %4.1f\n", dat._nsta, dat._elm);
 
 	fwrite(buff, (int)(p - buff), sizeof(char), fp);
 }

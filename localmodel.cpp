@@ -417,7 +417,9 @@ bool LocalAtmoModel::inputAtmoEpoch(IN Gtime tnow, IN AtmoInfo& stecinf, IN bool
 	map<int, int> trackStas[NUMSYS];		// sys->prn->num
 	map<int, EleStation> numStas[NUMSYS];	// sys->prn->el
 	string tstr = strtime(tnow, 2);
-	
+	int ep[6] = { 0 };
+	time2epoch(tnow, ep);
+
 	/* 1.预处理 */
 	// 前历元数据是否重复
 	if (_stecGroupGEC.find(tnow) != _stecGroupGEC.end() ||
@@ -585,6 +587,7 @@ void LocalAtmoModel::copyStecSat(IN int sys, IN int ref, IN map<int, StecModSat>
 		}
 		tmp._satreslevel = dat._satreslevel;
 		tmp._gridNum = dat._gridNum;
+		tmp._ele = dat._ele * R2D;
 		for (int i = 0; i < tmp._gridNum; i++) {
 			tmp._stecpergrid[i]._gridid = dat._stecpergrid.at(i + 1)._gridid;
 			tmp._stecpergrid[i]._lat    = dat._stecpergrid.at(i + 1)._lat;

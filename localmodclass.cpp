@@ -32,6 +32,7 @@ void ProStecModSat::deepcopy(IN ProStecModSat& src)
 	this->_sys = src._sys;
 	this->_sat = src._sat;
 	this->_nsta = src._nsta;
+	this->_ele = src._ele;
 	for (int i = 0; i < 4; i++) {
 		this->_coff[i] = src._coff[i];
 		this->_coff_res[i] = src._coff_res[i];
@@ -51,6 +52,7 @@ void ProStecModSat::reset()
 	this->_sys = '\0';
 	this->_sat = 0;
 	this->_nsta = 0;
+	this->_ele = 0.0;
 	for (int i = 0; i < 4; i++) {
 		this->_coff[i] = 0.0;
 		this->_coff_res[i] = 0.0;

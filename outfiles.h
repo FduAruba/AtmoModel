@@ -12,11 +12,13 @@ public:
 	{
 		_sys = '\0';
 		_prn = 0;
+		_nsta = 0;
 		_fixflag = 0;
 		_resflag = 0;
 		_outflag = 0;
 		_ngrid = 0;
 		_el = 0.0;
+		_elm = 0.0;
 		_dstec[0] = _dstec[1] = _dstec[2] = 0.0;
 		_dDstec[0] = _dDstec[1] = 0.0;
 		_QI[0] = _QI[1] = 0.0;
@@ -26,12 +28,14 @@ public:
 
 	char _sys;
 	int _prn;
+	int _nsta;
 	int _fixflag;
 	int _resflag;
 	int _outflag;
 	int _ngrid;
 	int _pergrid[4];
 	double _el;
+	double _elm;
 	double _dstec[3];
 	double _dDstec[2];
 	double _QI[2];

@@ -356,7 +356,7 @@ int StecModel::markUnhalthSites(IO vector<stecOBS>& obss)
 			pos._lat = it->_lat;
 			pos._lon = it->_lon;
 			double diff = fabs(it->_stec - vmean);
-			if (diff > 3.0 * vrms) {
+			if (diff > 4.0 * vrms) {
 				_badsta.push_back(pos);
 				nbad[0]++;
 				it = obss.erase(it);
@@ -558,6 +558,8 @@ bool StecModel::estCoeff(IN vector<stecOBS>& obss, IN GridInfo& grid, IN int sys
 bool StecModel::oneSatModelEst(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys, IN int prn, OUT StecModSat& dat)
 {
 	string tstr = strtime(atmo._time, 2);
+	int ep[6] = { 0 };
+	time2epoch(atmo._time, ep);
 	int SYS = idx2sys(sys);
 	bool stat = false;
 	vector<stecOBS> obss;
