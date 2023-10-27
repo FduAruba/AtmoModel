@@ -8,6 +8,12 @@
 2023/10/20:
 
 + dev 1.0.0: 
-	+ STEC polynomial coefficient modeling & grid node residual fitting complete;
-	+ support system: GPS/GLO/GAL/BDS2/BDS3;
-	+ the external accuracy verification at [06:00 UT-10:00 UT] and [16:00 UT-20:00 UT] is much bigger than other time,  the probable reason for this is that the ionosphere is more active during these times;
+  + STEC polynomial coefficient modeling & grid node residual fitting complete;
+  + support system: GPS/GLO/GAL/BDS;
+
+2023/10/27:
+
++ dev 1.0.1: 
+	+ add Multi-quadric Surface Fitting (MSF) to grid node residual fitting;
+	+ create rover accuracy validation file output API (*XXXX-stec.txt*);
+	+ create rover roti file output API (*XXXX.roti*);
