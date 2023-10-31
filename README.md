@@ -1,7 +1,7 @@
 # AtmoModel
-**this project is for GNSS multi-system ionosphere STEC (Slant Total Electon Content) modeling**.
+**this project is for GNSS multi-system ionosphere Slant Total Electon Content (STEC) modeling**.
 
-2023/9/1:
+2023/9/1: 
 
 + create this project by QHY;
 
@@ -15,6 +15,6 @@
 
 + dev 1.0.1: 
 	+ add Multi-quadric Surface Fitting (MSF) to grid node residual fitting;
-	+ create rover accuracy validation file output API *(XXXX-stec.txt)*;
-	+ create rover roti file output API *(XXXX.roti)*;
+	+ create rover accuracy validation file output API *(\*.stec)*;
+	+ create rover roti file output API *(\*.roti)*;
 

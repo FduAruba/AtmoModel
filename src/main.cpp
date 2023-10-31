@@ -95,8 +95,8 @@ int main()
 	AtmoInfo* stecinf        = new AtmoInfo;		// stec数据
 	ProStecMod* stecmod      = new ProStecMod;		// stec建模
 	LocalAtmoModel* localMod = new LocalAtmoModel;	// 大气建模类
-	FileFps outfps;
-	StaRotiMap stamap;
+	FileFps outfps;									// 输出文件指针
+	StaRotiMap stamap;								// ROTI信息
 	
 	t1 = clock();
 	/* 读取配置文件 */

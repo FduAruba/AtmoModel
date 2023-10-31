@@ -97,7 +97,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)Eigen;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)Eigen;$(ProjectDir)include;$(ProjectDir)src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir)Eigen;$(ProjectDir)include;$(ProjectDir)src;$(IncludePath)</IncludePath>
