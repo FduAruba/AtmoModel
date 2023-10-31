@@ -684,23 +684,20 @@ extern void freeFps(IO Coption& cfg, IO FileFps& fps)
 {
 	for (auto& pSta : cfg._sta) {
 		if (pSta._fp != NULL) {
-			fclose(pSta._fp); 
-			pSta._fp = NULL;
+			fclose(pSta._fp); pSta._fp = NULL;
 		}
 	}
 
 	for (auto& pSta : cfg._rov) {
 		if (pSta._fp != NULL) {
-			fclose(pSta._fp);
-			pSta._fp = NULL;
+			fclose(pSta._fp); pSta._fp = NULL;
 		}
 	}
-	
+
 	for (auto& pSta : fps) {
 		for (auto& iFp : pSta.second) {
 			if (iFp.second != NULL) {
-				fclose(iFp.second); 
-				iFp.second = NULL;
+				fclose(iFp.second); iFp.second = NULL;
 			}
 		}
 	}
