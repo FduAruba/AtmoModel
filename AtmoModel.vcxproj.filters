@@ -15,73 +15,73 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="readfiles.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="commtime.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="commfun.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="localmodel.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="localmodclass.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="stecmodel.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="stecroti.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="algmatrix.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="outfiles.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
+    <ClInclude Include="include\algmatrix.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\commfun.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\comminterface.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\commtime.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\const.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\dirent.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\localmodclass.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\localmodel.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\outfiles.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\readfiles.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stecmodel.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stecroti.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="const.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="commtime.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="comminterface.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="commfun.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="readfiles.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="localmodel.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="localmodclass.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="dirent.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="stecroti.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="stecmodel.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="algmatrix.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="outfiles.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
+    <ClCompile Include="src\algmatrix.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\commfun.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\commtime.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\localmodclass.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\localmodel.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\outfiles.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\readfiles.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\stecmodel.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\stecroti.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

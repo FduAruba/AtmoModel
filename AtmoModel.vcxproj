@@ -18,6 +18,32 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\algmatrix.h" />
+    <ClInclude Include="include\commfun.h" />
+    <ClInclude Include="include\comminterface.h" />
+    <ClInclude Include="include\commtime.h" />
+    <ClInclude Include="include\const.h" />
+    <ClInclude Include="include\dirent.h" />
+    <ClInclude Include="include\localmodclass.h" />
+    <ClInclude Include="include\localmodel.h" />
+    <ClInclude Include="include\outfiles.h" />
+    <ClInclude Include="include\readfiles.h" />
+    <ClInclude Include="include\stecmodel.h" />
+    <ClInclude Include="include\stecroti.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\algmatrix.cpp" />
+    <ClCompile Include="src\commfun.cpp" />
+    <ClCompile Include="src\commtime.cpp" />
+    <ClCompile Include="src\localmodclass.cpp" />
+    <ClCompile Include="src\localmodel.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\outfiles.cpp" />
+    <ClCompile Include="src\readfiles.cpp" />
+    <ClCompile Include="src\stecmodel.cpp" />
+    <ClCompile Include="src\stecroti.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -74,7 +100,7 @@
     <IncludePath>$(ProjectDir)Eigen;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)Eigen;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)Eigen;$(ProjectDir)include;$(ProjectDir)src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -133,32 +159,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="algmatrix.cpp" />
-    <ClCompile Include="commfun.cpp" />
-    <ClCompile Include="commtime.cpp" />
-    <ClCompile Include="localmodclass.cpp" />
-    <ClCompile Include="localmodel.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="outfiles.cpp" />
-    <ClCompile Include="readfiles.cpp" />
-    <ClCompile Include="stecmodel.cpp" />
-    <ClCompile Include="stecroti.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="algmatrix.h" />
-    <ClInclude Include="commfun.h" />
-    <ClInclude Include="comminterface.h" />
-    <ClInclude Include="commtime.h" />
-    <ClInclude Include="const.h" />
-    <ClInclude Include="dirent.h" />
-    <ClInclude Include="localmodclass.h" />
-    <ClInclude Include="localmodel.h" />
-    <ClInclude Include="outfiles.h" />
-    <ClInclude Include="readfiles.h" />
-    <ClInclude Include="stecmodel.h" />
-    <ClInclude Include="stecroti.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

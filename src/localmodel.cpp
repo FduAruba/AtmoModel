@@ -303,7 +303,7 @@ bool LocalAtmoModel::selectOneRefSat(IN map<int, EleStation>* numstas, OUT int* 
 		sortSiteNumber(isys, numstas, vPrn);
 
 		if (vPrn.size() <= 0) {
-			printf("no valid sat %d %d\n", isys, (int)numstas[isys].size());
+			//printf("no valid sat %d %d\n", isys, (int)numstas[isys].size());
 			continue;
 		}
 

@@ -128,4 +128,7 @@ extern bool movGrids(IN Coption& config, OUT GridInfo& grid);
 /* @brief set atmo epoch-wise */
 extern bool movAtmos(IN Gtime tnow, SiteAtmos& stas, OUT AtmoInfo& stecinf);
 
+/* @brief release file fps */
+extern void freeFps(IO Coption& cfg, IO FileFps& fps);
+
 #endif

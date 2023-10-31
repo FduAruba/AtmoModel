@@ -254,7 +254,7 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 			cfg._nvali++;
 
 			bool st1 = diff1 <= diff0 ? true : false;
-			bool st2 = diff1 >= THRES_RES && stec1 > modsat->_QI[1] && ngrid >= 1 ? true : false;
+			bool st2 = diff1 >= THRES_RES && stec1 > modsat->_QI[1] ? true : false;
 			//if (st1 || !st2) { continue; }
 			// DEBUG ----------------------------------------------------------------------
 
@@ -324,7 +324,7 @@ void printSatStec(IN OutSatVeri& dat, IN FILE* fp)
 	p += sprintf(p, " %1d %1d %5.2f %5.2f", dat._resflag, dat._outflag, dat._dDstec[0], dat._dDstec[1]);
 	p += sprintf(p, " %5.2f %5.2f", dat._QI[0], dat._QI[1]);
 	p += sprintf(p, " %1d %1d %1d %1d %1d", dat._ngrid, dat._pergrid[0], dat._pergrid[1], dat._pergrid[2], dat._pergrid[3]);
-	p += sprintf(p, " %2d %4.1f\n", dat._nsta, dat._elm);
+	p += sprintf(p, " %2d\n", dat._nsta);
 
 	fwrite(buff, (int)(p - buff), sizeof(char), fp);
 }
@@ -465,7 +465,13 @@ void createRovFile(IN Coption& cfg, OUT FileFps& fps)
 		string rovpath = cfg._pathou + "\\" + rov;
 
 		if (cfg._modeltype & 1) {
-			string stecpath = rovpath + "-stec.txt";
+			string s_fittype = "";
+			switch (cfg._fittype) {
+			case FIT_IDW: { s_fittype = "_IDW"; break; }
+			case FIT_MSF: { s_fittype = "_MSF"; break; }
+			default:	  {                     break; }
+			}
+			string stecpath = rovpath + s_fittype + ".stec";
 			FILE* fp = fopen(stecpath.c_str(), "w");
 			if (fp != NULL) {
 				fps[rov].emplace(1, fp);

@@ -162,6 +162,7 @@ int main()
 	printf("\n* Total program time: %4.1f minute\n", (t2 - t1) / CLOCKS_PER_SEC / 60.0);
 
 	/* ÊÍ·ÅÄÚ´æ¿Õ¼ä */
+	freeFps(config, outfps);
 	delete popt; delete grid; delete stecinf; delete stecmod; delete localMod;
 
 	return 0;
