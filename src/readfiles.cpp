@@ -143,7 +143,7 @@ static bool configTime(IN FILE* fp, OUT Coption& config)
 	return (ts <= te) && (config._ti > 0);
 }
 
-static bool configSystem(IN FILE* fp, OUT Coption& config)
+static bool configGlobal(IN FILE* fp, OUT Coption& config)
 {
 	char buff[MAXCHARS] = { '\0' };
 	char* p = buff;
@@ -157,7 +157,21 @@ static bool configSystem(IN FILE* fp, OUT Coption& config)
 			p = strstr(buff, "=");
 			if (p == NULL || (++p) == NULL) { continue; }
 
-			if (strstr(buff, "useres")) {
+			if (strstr(buff, "algotype")) {
+				ret = sscanf(p, "%d", &config._algotype);
+				if (ret != 1) {
+					printf("***ERROR: read config algotype fail!\n");
+					return false;
+				}
+			}
+			else if (strstr(buff, "modeltype")) {
+				ret = sscanf(p, "%d", &config._modeltype);
+				if (ret != 1) {
+					printf("***ERROR: read config modeltype fail!\n");
+					return false;
+				}
+			}
+			else if (strstr(buff, "useres")) {
 				ret = sscanf(p, "%d", &config._useres);
 				if (ret != 1) {
 					printf("***ERROR: read config useres fail!\n");
@@ -192,20 +206,13 @@ static bool configSystem(IN FILE* fp, OUT Coption& config)
 					return false;
 				}
 			}
-			else if (strstr(buff, "refsatsmooth")) {
-				ret = sscanf(p, "%d", &config._refsatsmooth);
-				if (ret != 1) {
-					printf("***ERROR: read config refsatsmooth fail!\n");
-					return false;
-				}
-			}
 		}
 	}
 
 	return true;
 }
 
-static bool configModel(IN FILE* fp, OUT Coption& config)
+static bool configIono(IN FILE* fp, OUT Coption& config)
 {
 	char buff[MAXCHARS] = { '\0' };
 	char* p = buff;
@@ -219,22 +226,8 @@ static bool configModel(IN FILE* fp, OUT Coption& config)
 			p = strstr(buff, "=");
 			if (p == NULL || (++p) == NULL) { continue; }
 
-			if (strstr(buff, "algotype")) {
-				ret = sscanf(p, "%d", &config._algotype);
-				if (ret != 1) {
-					printf("***ERROR: read config algotype fail!\n");
-					return false;
-				}
-			}
-			else if (strstr(buff, "modeltype")) {
-				ret = sscanf(p, "%d", &config._modeltype);
-				if (ret != 1) {
-					printf("***ERROR: read config modeltype fail!\n");
-					return false;
-				}
-			}
-			else if (strstr(buff, "fittype")) {
-				ret = sscanf(p, "%d", &config._fittype);
+			if (strstr(buff, "fittype")) {
+				ret = sscanf(p, "%d", &config._ionotype);
 				if (ret != 1) {
 					printf("***ERROR: read config fittype fail!\n");
 					return false;
@@ -265,6 +258,54 @@ static bool configModel(IN FILE* fp, OUT Coption& config)
 				ret = sscanf(p, "%lf", &config._qicoeff);
 				if (ret != 1) {
 					printf("***ERROR: read config qicoeff fail!\n");
+					return false;
+				}
+			}
+			else if (strstr(buff, "refsatsmooth")) {
+				ret = sscanf(p, "%d", &config._refsatsmooth);
+				if (ret != 1) {
+					printf("***ERROR: read config refsatsmooth fail!\n");
+					return false;
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
+static bool configTrop(IN FILE* fp, OUT Coption& config)
+{
+	char buff[MAXCHARS] = { '\0' };
+	char* p = buff;
+	int ret = 0;
+
+	while (fgets(buff, sizeof(buff), fp)) {
+		if (strstr(buff, "[end]")) {
+			break;
+		}
+		else {
+			p = strstr(buff, "=");
+			if (p == NULL || (++p) == NULL) { continue; }
+
+			if (strstr(buff, "fittype")) {
+				ret = sscanf(p, "%d", &config._troptype);
+				if (ret != 1) {
+					printf("***ERROR: read config fittype fail!\n");
+					return false;
+				}
+			}
+			else if (strstr(buff, "bsparse")) {
+				ret = sscanf(p, "%d", &config._bsparse);
+				if (ret != 1) {
+					printf("***ERROR: read config bsparse fail!\n");
+					return false;
+				}
+			}
+			else if (strstr(buff, "meanzhd")) {
+				ret = sscanf(p, "%d", &config._meanzhd);
+				if (ret != 1) {
+					printf("***ERROR: read config meanzhd fail!\n");
 					return false;
 				}
 			}
@@ -326,20 +367,19 @@ static bool configRegion(IN FILE* fp, OUT Coption& config)
 
 extern bool readConfigFile(IN const char* fname, OUT Coption& config)
 {
-	FILE* fp = NULL;
 	char buff[MAXCHARS] = { '\0' };
-	char comm[MAXCOMMENT] = "ERROR_EMPTY";
 	char* p = buff;
+	char comm[MAXCOMMENT] = "ERROR_EMPTY";
 	int type = 0;
 
 	if (fname == NULL || strlen(fname) == 0) {
 		return false;
 	}
-	if ((fp = fopen(fname, "r")) == NULL) {
+	if ((config._fp = fopen(fname, "r")) == NULL) {
 		return false;
 	}
 
-	while (fgets(buff, sizeof(buff), fp)) {
+	while (fgets(buff, sizeof(buff), config._fp)) {
 		if (buff[0] == '#' || strlen(buff) <= 1) {
 			continue;
 		}
@@ -349,26 +389,31 @@ extern bool readConfigFile(IN const char* fname, OUT Coption& config)
 
 			if (2 == sscanf(p, "%d %s", &type, comm)) {
 				printf("read config: [%d]%s...\n", type, comm);
+
 				switch (type)
 				{
 				case 1: { // file
-					if (!configFile(fp, config))   { return false; }
+					if (!configFile(config._fp, config))   { return false; }
 					break;
 				}
 				case 2: { // time
-					if (!configTime(fp, config))   { return false; }
+					if (!configTime(config._fp, config))   { return false; }
 					break;
 				}
-				case 3: { // system
-					if (!configSystem(fp, config)) { return false; }
+				case 3: { // global
+					if (!configGlobal(config._fp, config)) { return false; }
 					break;
 				}
-				case 4: { // model
-					if (!configModel(fp, config))  { return false; }
+				case 4: { // iono
+					if (!configIono(config._fp, config))   { return false; }
 					break;
 				}
-				case 5: { // region
-					if (!configRegion(fp, config)) { return false; }
+				case 5: { // trop
+					if (!configTrop(config._fp, config))   { return false; }
+					break;
+				}
+				case 6: { // region
+					if (!configRegion(config._fp, config)) { return false; }
 					break;
 				}
 				default: {
@@ -481,8 +526,9 @@ static int decodeSatData(IN Gtime tnow, IN FILE* fp, IN int ns, OUT SatAtmos* sa
 
 static int decodeData(IN Gtime tnow, OUT vector<Cstation>& sta, OUT SiteAtmos& stas)
 {
-	char buff[MAXCHARS] = { '\0' };
-	
+	char buff[MAXCHARS] = { '\0' }, tstr[64] = { '\0' };
+	time2str(tnow, tstr, 2);
+
 	for (auto& pSta : sta) { // loop stations
 		if (pSta._fp == NULL) {
 			pSta._fp = fopen(pSta._path.c_str(), "r");
@@ -492,31 +538,33 @@ static int decodeData(IN Gtime tnow, OUT vector<Cstation>& sta, OUT SiteAtmos& s
 		Gtime t = { 0 };
 		SiteAtmo station;
 		station._name = pSta._name;
-		station._ID = pSta._ID;
+		station._ID   = pSta._ID;
 
 		/* decode epoch */
 		int ns = 0;
-		if (!pSta._line.empty()) {
-			ns = decodeEpoch(tnow, (char*)pSta._line.c_str(), station, t);
-		}
-		else {
-			while (fgets(buff, sizeof(buff), pSta._fp)) {
-				if (buff[0] == '*') {
-					ns = decodeEpoch(tnow, buff, station, t);
+		while (!feof(pSta._fp)) {
+			if (!pSta._line.empty()) {
+				memcpy(buff, pSta._line.c_str(), pSta._line.size());
+				pSta._line.clear();
+			}
+			else {
+				fgets(buff, sizeof(buff), pSta._fp);
+			}
 
-					if (ns == 0 && t > tnow) {
-						//int dep = (int)(timediff(t, tnow) / config._ti);
-						//printf("%s: %s [jump] dt=%d \n", strtime(tnow, 2).c_str(), pSta._name.c_str(), dep);
-						pSta._line = buff;
-						break;
-					}
-					else if (ns > 0) {
-						break;
-					}
+			if (buff[0] == '*') {
+				ns = decodeEpoch(tnow, buff, station, t);
+				if (ns == 0 && t > tnow) {
+					//double dep = timediff(t, tnow);
+					//printf("%s: %s [jump] dt=%.1f \n", tstr, pSta._name.c_str(), dep);
+					pSta._line = buff;
+					break;
+				}
+				else if (ns > 0) {
+					break;
 				}
 			}
 		}
-
+		
 		/* decode sat data */
 		if (ns > 0 && tnow == t) {
 			pSta._line.clear();
@@ -541,22 +589,23 @@ static int decodeData(IN Gtime tnow, OUT vector<Cstation>& sta, OUT SiteAtmos& s
 extern bool readAugmentData(IN Gtime tnow, IN Coption& config, OUT SiteAtmos& stas, OUT SiteAtmos& rovs)
 {
 	int nall = (int)config._sta.size();
-
 	int nsta = decodeData(tnow, config._sta, stas);
 	int nrov = decodeData(tnow, config._rov, rovs);
 
-	double thres = 50.0;
+	double thres = 30.0;
 	double rate = (double)nsta / (double)nall * 100.0;
 
 	if (rate < thres) {
 		//printf("%s nsta=%3d nrov=%3d %5.1f%%\n", strtime(tnow, 2).c_str(), nsta, nrov, rate);
 		config._nlack++;
+		return false;
 	}
 
-	return nsta > 0 ? true : false;
+	//return nsta > 0 ? true : false;
+	return true;
 }
 
-extern void movOption(IN Coption& config, OUT ProOption& opt)
+extern void setOpt(IN Coption& config, OUT ProOption& opt)
 {
 	opt._maxroti[0] = 0.5;
 
@@ -584,18 +633,21 @@ extern void movOption(IN Coption& config, OUT ProOption& opt)
 		}
 	}
 
-	opt._ti        = config._ti;
-	opt._minel     = config._minel;
-	opt._maxsatres = config._maxsatres;
-	opt._qimulti   = config._qimulti;
-	opt._qibase    = config._qibase;
-	opt._qicoeff   = config._qicoeff;
+	opt._ti           = config._ti;
+	opt._minel        = config._minel;
+	opt._maxsatres    = config._maxsatres;
+	opt._qimulti      = config._qimulti;
+	opt._qibase       = config._qibase;
+	opt._qicoeff      = config._qicoeff;
 	opt._refsatsmooth = config._refsatsmooth;
-	opt._algotype  = config._algotype;
-	opt._fittype   = config._fittype;
+	opt._algotype     = config._algotype;
+	opt._ionotype     = config._ionotype;
+	opt._troptype     = config._troptype;
+	opt._bsparse      = config._bsparse;
+	opt._meanzhd      = config._meanzhd;
 }
 
-extern bool movGrids(IN Coption& config, OUT GridInfo& grid)
+extern bool setGrd(IN Coption& config, OUT GridInfo& grid)
 {
 	for (int i = 0; i < 2; i++) {
 		grid._latgrid[i] = config._latgrid[i];
@@ -626,10 +678,30 @@ extern bool movGrids(IN Coption& config, OUT GridInfo& grid)
 	}
 	grid._gridNum = idx;
 
+	int k = 0;
+	dlat = (grid._latcell[1] - grid._latcell[0]) / 4.0;
+	dlon = (grid._loncell[1] - grid._loncell[0]) / 4.0;
+	for (int i = 0; i < 4; i++) {
+		double lat0 = (grid._latcell[0] + dlat * i) * D2R;
+		double lat1 = (grid._latcell[0] + dlat * (i + 1)) * D2R;
+		double latm = (grid._latcell[0] + dlat * (i + 0.5)) * D2R;
+
+		for (int j = 0; j < 4; j++) {
+			double lon0 = (grid._loncell[0] + dlon * j) * D2R;
+			double lon1 = (grid._loncell[0] + dlon * (j + 1)) * D2R;
+			double lonm = (grid._loncell[0] + dlon * (j + 0.5)) * D2R;
+
+			vector<double> dat;
+			dat.push_back(lat0); dat.push_back(lat1); dat.push_back(latm);
+			dat.push_back(lon0); dat.push_back(lon1); dat.push_back(lonm);
+			grid._cells.emplace(++k, dat);
+		}
+	}
+
 	return true;
 }
 
-extern bool movAtmos(IN Gtime tnow, SiteAtmos& stas, OUT AtmoInfo& stecinf)
+extern bool setAtm(IN Gtime tnow, SiteAtmos& stas, OUT AtmoInfo& stecinf)
 {
 	for (auto& pSta : stas) {
 		int ID = pSta.first;
@@ -682,22 +754,31 @@ extern bool movAtmos(IN Gtime tnow, SiteAtmos& stas, OUT AtmoInfo& stecinf)
 
 extern void freeFps(IO Coption& cfg, IO FileFps& fps)
 {
+	// cfg fp
+	if (cfg._fp != NULL) {
+		fclose(cfg._fp);
+		cfg._fp = NULL;
+	}
+	// model sta fp
 	for (auto& pSta : cfg._sta) {
 		if (pSta._fp != NULL) {
-			fclose(pSta._fp); pSta._fp = NULL;
+			fclose(pSta._fp);
+			pSta._fp = NULL;
 		}
 	}
-
+	// valid rov fp
 	for (auto& pSta : cfg._rov) {
 		if (pSta._fp != NULL) {
-			fclose(pSta._fp); pSta._fp = NULL;
+			fclose(pSta._fp);
+			pSta._fp = NULL;
 		}
 	}
-
+	// output file fp
 	for (auto& pSta : fps) {
 		for (auto& iFp : pSta.second) {
 			if (iFp.second != NULL) {
-				fclose(iFp.second); iFp.second = NULL;
+				fclose(iFp.second);
+				iFp.second = NULL;
 			}
 		}
 	}

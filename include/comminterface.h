@@ -8,9 +8,5 @@
 #include "commtime.h"
 #include "commfun.h"
 
-typedef Eigen::MatrixXd MatXd;
-typedef Eigen::VectorXd VecXd;
-typedef map<string, map<int, FILE*>> FileFps;
-
 #endif // !COMM_INTERFACE_H
 

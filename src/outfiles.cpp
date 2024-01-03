@@ -213,7 +213,7 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 			int perGrid[4] = { 0 };
 			res = 0.0;
 			if (cfg._useres) {
-				switch (cfg._fittype)
+				switch (cfg._ionotype)
 				{
 				case FIT_IDW: {
 					res = fact * rovRes(latr, lonr, grid, modsat, modref, &ngrid, perGrid);
@@ -421,7 +421,7 @@ void printSatMod(IN int useres, IN ProStecModSat& dat, IN FILE* fp)
 	fwrite(buff, (int)(p - buff), sizeof(char), fp);
 }
 
-void printEpochMod(IN Gtime tnow, IN ProStecMod& stecmod, IN int ngrid, IN FILE* fp)
+void printEpochSTEC(IN Gtime tnow, IN ProStecMod& stecmod, IN int ngrid, IN FILE* fp)
 {
 	char buff[MAXOUTCHARS], * p = buff;
 	int ep[6] = { 0 };
@@ -437,9 +437,61 @@ void printEpochMod(IN Gtime tnow, IN ProStecMod& stecmod, IN int ngrid, IN FILE*
 	fwrite(buff, (int)(p - buff), sizeof(char), fp);
 }
 
+void printEpochZTD(IN Gtime tnow, IN ProZtdMod& ztdmod, IN FILE* fp)
+{
+	char buff[MAXOUTCHARS], * p = buff;
+	int ep[6] = { 0 };
+
+	time2epoch(tnow, ep);
+	int nc = ztdmod._ncoeff;
+	int nb = ztdmod._nsta;
+	double zhd = ztdmod._zhd;
+	p += sprintf(p, "> %04d %02d %02d %02d %02d %02d   %6.4f %02d %02d\n",
+		ep[0], ep[1], ep[2], ep[3], ep[4], ep[5], zhd, nc, nb);
+
+	p += sprintf(p, "zwd    %5.3f", ztdmod._qi);
+	for (int i = 0; i < nc; i++) {
+		p += sprintf(p, "%15.8f", ztdmod._coeff[i]);
+	}
+	p += sprintf(p, "\n");
+
+	fwrite(buff, (int)(p - buff), sizeof(char), fp);
+}
+
+void printEpoch(IN Gtime tnow, IN bool* stat, IN ProStecMod& stecmod, IN ProZtdMod& ztdmod, IN int ngrid, IN FILE* fp)
+{
+	bool bwrite = false;
+	char buff[MAXOUTCHARS], * p = buff;
+	int ep[6] = { 0 };
+
+	time2epoch(tnow, ep);
+	p += sprintf(p, "> %04d %02d %02d %02d %02d %02d   ", 
+		ep[0], ep[1], ep[2], ep[3], ep[4], ep[5]);
+	if (stat[0]) {
+		bwrite = true;
+		int ng = stecmod._satNum[0];
+		int nr = stecmod._satNum[1];
+		int ne = stecmod._satNum[2];
+		int nc = stecmod._satNum[3] + stecmod._satNum[4];
+		p += sprintf(p, "[Iono]%02d %02d %02d %02d   %3d ", ng, nr, ne, nc, ngrid);
+	}
+	if (stat[1]) {
+		bwrite = true;
+		int np = ztdmod._ncoeff;
+		int nb = ztdmod._nsta;
+		double zhd = ztdmod._zhd;
+		p += sprintf(p, "[Ztd]%6.4f %02d %02d ", zhd, np, nb);
+	}
+	p += sprintf(p, "\n");
+
+	if (bwrite) {
+		fwrite(buff, (int)(p - buff), sizeof(char), fp);
+	}
+}
+
 void outStecModel(IN Gtime tnow, IN  Coption& cfg, IN GridInfo& grid, IN ProStecMod& stecmod, IN FILE* fp)
 {
-	printEpochMod(tnow, stecmod, grid._gridNum, fp);
+	//printEpochSTEC(tnow, stecmod, grid._gridNum, fp);
 	
 	for (int isys = 0; isys < NUMSYS; isys++) {
 		if (stecmod._satNum[isys] == 0) {
@@ -449,6 +501,40 @@ void outStecModel(IN Gtime tnow, IN  Coption& cfg, IN GridInfo& grid, IN ProStec
 			printSatMod(cfg._useres, iSat.second, fp);
 		}
 	}
+}
+
+void outZtdModel(IN Gtime tnow, IN ProZtdMod& ztdmod, IN FILE* fp)
+{
+	char buff[MAXOUTCHARS], * p = buff;
+	//int ep[6] = { 0 };
+	//time2epoch(tnow, ep);
+
+	int np = ztdmod._ncoeff;
+	/*int nb = ztdmod._nsta;
+	double zhd = ztdmod._zhd;
+	p += sprintf(p, "> %04d %02d %02d %02d %02d %02d   %6.4f %02d %02d\n",
+		ep[0], ep[1], ep[2], ep[3], ep[4], ep[5], zhd, nc, nb);*/
+
+	p += sprintf(p, "zwd    %5.3f", ztdmod._qi);
+	for (int i = 0; i < np; i++) {
+		p += sprintf(p, "%15.8f", ztdmod._coeff[i]);
+	}
+	p += sprintf(p, "\n");
+
+	fwrite(buff, (int)(p - buff), sizeof(char), fp);
+}
+
+void outZtdModel(IN Gtime tnow, IN GridInfo& grid, IN ProZtdMod& ztdmod, IN FILE* fp)
+{
+	printEpochZTD(tnow, ztdmod, fp);
+}
+
+void outAtmoModel(IN Gtime tnow, IN  Coption& cfg, IN GridInfo& grid, IN bool* stat, IN ProStecMod& stecmod, IN ProZtdMod& ztdmod, IN FILE* fp)
+{
+	printEpoch(tnow, stat, stecmod, ztdmod, grid._gridNum, fp);
+
+	if (stat[0]) { outStecModel(tnow, cfg, grid, stecmod, fp); }
+	if (stat[1]) { outZtdModel(tnow, ztdmod, fp); }
 }
 
 void createRovFile(IN Coption& cfg, OUT FileFps& fps)
@@ -466,7 +552,7 @@ void createRovFile(IN Coption& cfg, OUT FileFps& fps)
 
 		if (cfg._modeltype & 1) {
 			string s_fittype = "";
-			switch (cfg._fittype) {
+			switch (cfg._ionotype) {
 			case FIT_IDW: { s_fittype = "_IDW"; break; }
 			case FIT_MSF: { s_fittype = "_MSF"; break; }
 			default:	  {                     break; }
@@ -510,5 +596,6 @@ void createRovFile(IN Coption& cfg, OUT FileFps& fps)
 	FILE* fp = fopen(modpath.c_str(), "w");
 	if (fp != NULL) {
 		fps["MODEL"].emplace(1, fp);
+		writeModelHead(cfg, fp);
 	}
 }

@@ -31,10 +31,10 @@ void StecModel::settime(IN const Gtime t)
 	this->_tnow = t;
 }
 
-void StecModel::setBasicOption(IN ProOption& opt, IN int res)
+void StecModel::setBasicOption(IN ProOption& opt,IN int res)
 {
 	_useres   = res;
-	_fittype  = opt._fittype;
+	_fittype  = opt._ionotype;
 	_minel    = opt._minel;
 	_qi_multi = opt._qimulti;
 	_qi_base  = opt._qibase;
@@ -200,16 +200,25 @@ int StecModel::uniformRef(IO AtmoEpoch& atmo)
 
 bool StecModel::preCheckSatModel(IN Gtime tnow, IN AtmoEpochs& group, OUT AtmoEpoch& atmo)
 {
+	/*int ep[6] = { 0 };
+	time2epoch(tnow, ep);
+	if (ep[3] == 6 && ep[4] == 14 && ep[5] == 30) {
+		int kk = 1;
+	}*/
+	
 	/* 计算 ROTI */
 	if (!_stecRoti.procRoti(tnow, group)) {
+		//printf("2-1\n");
 		return false;
 	}
 	/* 获取当前数据 */
 	if (!getAtmo(tnow, group, atmo)) {
+		//printf("2-2\n");
 		return false;
 	}
 	/* 统一参考星&计算星间单差STEC */
 	if (!uniformRef(atmo)) {
+		//printf("2-3 %d %d\n", atmo._staAtmos.size(), atmo._refSat[0]);
 		return false;
 	}
 
@@ -479,7 +488,7 @@ bool StecModel::estCoeff(IN vector<stecOBS>& obss, IN GridInfo& grid, IN int sys
 	(*V) = (*Y) - (*H) * (*X);
 	for (int i = 0; i < MAX_ITER; i++) {
 		// 最小二乘
-		(*dx) = wlsq_LU(*H, *V, *P, Q);
+		(*dx) = LSQ(*H, *V, *P, Q);
 		(*X) += (*dx);
 		(*V) = (*Y) - (*H) * (*X);
 
@@ -866,7 +875,7 @@ bool StecModel::oneSatStecRes(IN AtmoEpoch& atmo, IN GridInfo& grid, IN int sys,
 	}
 	dat._ele = mean_ele;
 	if (mean_ele < _minel * D2R) { // 高度角
-		//printf("LOW EL: %c%02d %5.2f(deg)\n", SYS, prn, mean_ele * R2D);
+		//printf("%s LOW EL: %c%02d %5.2f(deg)\n", strtime(atmo._time, 2).c_str(), SYS, prn, mean_ele * R2D);
 		return false;
 	}
 
@@ -1093,15 +1102,15 @@ bool StecModel::checkSatContinuous(IN Gtime tnow, IN int sys, IN int prn, IN int
 		}
 		if (fabs(stec_new - stec_old) > THRESHOLD_MODEL_CONTINUOUS) {
 			nall++;
+			//printf("%s %02d %c%02d %6.2f\n", tstr.c_str(), i + 1, SYS, prn, fabs(stec_new - stec_old));
 			continue;
 		}
-		//printf("%s %02d %c%02d %6.2f\n", tstr.c_str(), i + 1, SYS, prn, fabs(stec_new - stec_old));
 		ngood++; nall++;
 	}
 
 	rate = (1.0 * ngood) / (1.0 * nall);
-	//printf("%s %c%02d %6.2f%%\n", tstr.c_str(), SYS, prn, rate * 100);
 	if (rate < THRESHOLD_SUCCESS_GRID) {
+		printf("%s %c%02d %6.2f%%\n", tstr.c_str(), SYS, prn, rate * 100);
 		return false;
 	}
 
@@ -1196,8 +1205,11 @@ void StecModel::refSatSmoothing(IN Gtime tnow)
 	}
 }
 
-void StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
+bool StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
 {
+	string tstr = strtime(atmo._time, 2);
+	bool stat = false;
+	
 	/* 1.计算基线距离 */
 	_siteGridDist.calcAllDist(atmo, grid);
 
@@ -1220,7 +1232,7 @@ void StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
 					this->recalculateQI(atmo, isys, pSat, grid, satdata);
 				}
 				// 检查建模结果是否连续
-				bool ifcont = checkSatContinuous(atmo._time, isys, pSat, atmo._refSat[isys], grid, satdata);
+				//bool ifcont = checkSatContinuous(atmo._time, isys, pSat, atmo._refSat[isys], grid, satdata);
 
 				// 插入当前历元系统建模结果
 				if (satdata._sat != 0) {
@@ -1228,12 +1240,16 @@ void StecModel::satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid)
 					_stecModCur._satNum[isys] += 1;
 				}
 			}
+			else {
+				//printf("%s %c%02d est fail %2d\n", tstr.c_str(), idx2sys(isys), pSat, atmo._stanum);
+			}
 		}
 
 		if (_stecModCur._satNum[isys] == 1) {
 			_stecModCur._satNum[isys] = 0;
 		}
+		stat |= (bool)_stecModCur._satNum[isys];
 	}
 
-	return;
+	return stat;
 }

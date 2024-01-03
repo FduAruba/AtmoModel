@@ -144,10 +144,10 @@ public:
 		_cursys = SYS_NONE;
 		for (int i = 0; i < NUMSYS; i++) {
 			_fixsys[i] = 0;
-			for (int j = 0; j < MAXSAT; j++) {
-				_X[i][j] = MatXd::Zero(3, 1);
-				_Q[i][j] = MatXd::Zero(3, 3);
-			}
+			//for (int j = 0; j < MAXSAT; j++) {
+			//	_X[i][j] = MatXd::Zero(3, 1);
+			//	_Q[i][j] = MatXd::Zero(3, 3);
+			//}
 		}
 		_sysidx[0] = SYS_GPS;
 		_sysidx[1] = SYS_GLO;
@@ -191,7 +191,7 @@ public:
 	bool checkSatContinuous(IN Gtime tnow, IN int sys, IN int prn, IN int ref, IN GridInfo& grid, IN StecModSat& dat);
 	void addStecMod(IN Gtime tnow);
 	void refSatSmoothing(IN Gtime tnow);
-	void satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid);
+	bool satModEst(IN AtmoEpoch& atmo, IN GridInfo& grid);
 
 	/* basic option */
 	Gtime _tnow;							// current time
@@ -215,8 +215,8 @@ public:
 	vector<Pos> _badsta;					// bad sites
 	StecRoti _stecRoti;						// stec roti
 	/* math */
-	MatXd _X[NUMSYS][MAXSAT];				// coffeicient matrix
-	MatXd _Q[NUMSYS][MAXSAT];				// covariance  matrix
+	//MatXd _X[NUMSYS][MAXSAT];				// coffeicient matrix
+	//MatXd _Q[NUMSYS][MAXSAT];				// covariance  matrix
 	/* debug */
 
 private:

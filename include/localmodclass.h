@@ -145,7 +145,8 @@ public:
 	double _step[2];			// step     [0]lat [1]lon (deg)
 	double _center[2];			// center   [0]lat [1]lon (deg)
 	double _length[2];			// length   [0]lat [1]lon (deg)
-	GridEach _grids[MAX_GRID];	// grid datas
+	GridEach _grids[MAX_GRID];	// grid datas for stec
+	map<int, vector<double>> _cells;
 
 private:
 };
@@ -480,8 +481,60 @@ public:
 	int _modetype;								// [0]C00 [1]C00,C01,C10 [2]C00,C01,C10,C11
 	int _satNum[NUMSYS];						// sys-sat number
 	int _satRef[NUMSYS];						// sys ref sat
-	map<int, ProStecModSat> _stecmod[NUMSYS];	// sys-sat model infos
+	map<int, ProStecModSat> _stecmod[NUMSYS];	// sys-sat-model infos
 
+private:
+};
+class ZtdInfo
+{
+public:
+	ZtdInfo() {
+		_time = { 0 };
+		_ID = 0;
+		for (int i = 0; i < 3; i++) {
+			_xyz[i] = _blh[i] = 0;
+		}
+		_zhd = _zhd0 = _zwd = _zwd0 = _std_zwd = 0;
+	}
+	~ZtdInfo() {}
+
+	/* site info*/
+	Gtime  _time;			  // solution time
+	string _name;			  // site name (4-char)
+	int    _ID;				  // site ID
+	double _xyz[3];			  // site xyz (m)
+	double _blh[3];			  // site blh (rad,rad,m)
+	double _zhd;			  // ZHD (m)
+	double _zhd0;			  // ZHD at MSL (m)
+	double _zwd;			  // ZWD (m)
+	double _zwd0;			  // ZWD at MSL (m)
+	double _std_zwd;		  // sigma of ZWD (m)
+private:
+};
+typedef map< string, ZtdInfo> ZtdInfos;
+/* process ztd moddel */
+class ProZtdMod
+{
+public:
+	ProZtdMod()
+	{
+		_time = { 0 };
+		_zhd = 0;
+		_nsta = _ncoeff = _qi = 0;
+		for (int i = 0; i < 10; i++) {
+			_coeff[i] = _coeff_rms[i] = 0;
+		}
+	}
+	~ProZtdMod() {}
+	void reset();
+
+	Gtime _time;								// current time
+	int _ncoeff;								// number of coefficients
+	int _nsta;									// number of model stations
+	double _zhd;								// region mean zenith hydrostatic delay(m)
+	double _coeff[10];							// zwd model coefficients
+	double _coeff_rms[10];						// zwd model coefficient resduials
+	double _qi;									// zwd model rms(m)
 private:
 };
 /* process option */
@@ -496,7 +549,7 @@ public:
 		}
 		_maxsatres = 20;
 		_algotype = 1;
-		_fittype = 0;
+		_ionotype = 0;
 		_diffmode = 1;
 		_refsatsmooth = 0;
 		_minel = 15.0;
@@ -506,6 +559,9 @@ public:
 		_qimulti = 0.68;
 		_qibase = 0.0;
 		_qicoeff = 1.0;
+		_troptype = 1;
+		_bsparse = 0;
+		_meanzhd = 0;
 	}
 	~ProOption() {}
 
@@ -517,7 +573,8 @@ public:
 	int _ressys[NUMSYS];		// use res or not    [0]no use [1]use
 	int _maxsatres;				// maximum satellite number use residuals *default: 20
 	int _algotype;				// innput data type [0]mixed [1]fixed
-	int _fittype;				// fitting model [0]IDW [1]MSF
+
+	int _ionotype;				// iono res fitting model [0]IDW [1]MSF
 	int _diffmode;				// difference mode [1]SD [2]SD+UD
 	int _refsatsmooth;			// reference satellite smooth [0]no use [1]use *default: 0
 	double _minel;				// minimum elevation angle (deg)
@@ -525,6 +582,10 @@ public:
 	double _qimulti;			// QI for muti-system
 	double _qibase;				// QI for base
 	double _qicoeff;			// QI for coeffieientss
+
+	int _troptype;				// zwd fitting model [0]OFC [1]OFC-MSL [2]MOFC
+	int _bsparse;				// [0]not sparse [1]sparse
+	int _meanzhd;				// [0]zhd0 [1]zhdm
 
 private:
 };

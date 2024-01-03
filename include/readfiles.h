@@ -10,6 +10,7 @@
 #include "direct.h"
 #include "dirent.h"
 
+//#include "readfiles.h"
 #include "comminterface.h"
 #include "localmodel.h"
 
@@ -21,6 +22,8 @@ class Coption
 public:
 	Coption()
 	{
+		_fp = NULL;
+		
 		for (int i = 0; i < 6; i++) {
 			_ts[i] = _te[i] = 0;
 		}
@@ -35,7 +38,7 @@ public:
 
 		_algotype = 1;
 		_modeltype = 1;
-		_fittype = 1;
+		_ionotype = 1;
 		_minel = 15.0;
 		_qimulti = 0.68;
 		_qibase = 0.0;
@@ -50,10 +53,14 @@ public:
 
 		_nlack = 0;
 		_nvali = _ngoodres = _nbadres = _noutres = 0;
+		_troptype = 1;
+		_bsparse = 0;
+		_meanzhd = 0;
 	};
 	~Coption() {};
 
 	/* file setting */
+	std::FILE* _fp;				// cfg file pointer
 	std::string _pathin;		// input folder
 	std::string _pathou;		// output folder
 	std::vector<Cstation> _sta; // stations
@@ -63,20 +70,24 @@ public:
 	int _te[6];					// time end
 	int _ti;					// time interval
 	/* system setting */
+	int _algotype;				// [0]mixed [1]fixed
+	int _modeltype;				// [1]STEC [2]ZTD [4]STD [8]VTEC
 	int _useres;				// use grid resudial or not [0]no use [1]use
 	int _usesys;				// use system or not   [1]GPS [2]GLO [4]GAL [8]BDS2 [16]BDS3
 	int _fixsys;				// fix system or not   [1]GPS [2]GLO [4]GAL [8]BDS2 [16]BDS3
 	int _ressys;				// use residual or not [1]GPS [2]GLO [4]GAL [8]BDS2 [16]BDS3
 	int _maxsatres;				// maximum satellite number use residuals *default: 20
 	int _refsatsmooth;			// reference satellite smooth   [0]no use [1]use *default: 0
-	/* model setting */
-	int _algotype;				// [0]mixed [1]fixed
-	int _modeltype;				// [1]STEC [2]ZTD [4]STD [8]VTEC
-	int _fittype;				// [0]IDW [1]MSF
+	/* iono setting */
+	int _ionotype;				// [0]IDW [1]MSF
 	double _minel;				// minimum elevation angle (deg)
 	double _qimulti;			// QI for muti-system
 	double _qibase;				// QI for base
 	double _qicoeff;			// QI for coeffieients
+	/* trop setting */
+	int _troptype;				// [0]OFC [1]OFC-MSL [2]MOFC
+	int _bsparse;				// [0]not sparse [1]sparse
+	int _meanzhd;				// [0]zhd0 [1]zhdm
 	/*  region setting */
 	double _latgrid[2];			// lat grid [0]min [1]max (deg)
 	double _latcell[2];			// lat cell [0]min [1]max (deg)
@@ -103,10 +114,12 @@ static int getStations(IN set<string> rovset, OUT Coption& config);
 static bool configFile(IN FILE* fp, OUT Coption& config);
 /* @brief get time option */
 static bool configTime(IN FILE* fp, OUT Coption& config);
-/* @brief get system option */
-static bool configSystem(IN FILE* fp, OUT Coption& config);
-/* @brief get model option */
-static bool configModel(IN FILE* fp, OUT Coption& config);
+/* @brief get global option */
+static bool configGlobal(IN FILE* fp, OUT Coption& config);
+/* @brief get iono option */
+static bool configIono(IN FILE* fp, OUT Coption& config);
+/* @brief get trop option */
+static bool configTrop(IN FILE* fp, OUT Coption& config);
 /* @brief get region option */
 static bool configRegion(IN FILE* fp, OUT Coption& config);
 /* @brief read config file and set option */
@@ -122,11 +135,11 @@ static int decodeData(IN Gtime tnow, OUT vector<Cstation>& sta, OUT SiteAtmos& s
 extern bool readAugmentData(IN Gtime tnow, IN Coption& config, OUT SiteAtmos& stas, OUT SiteAtmos& rovs);
 
 /* @brief set option from config */
-extern void movOption(IN Coption& config, OUT ProOption& opt);
+extern void setOpt(IN Coption& config, OUT ProOption& opt);
 /* @brief set grids from config */
-extern bool movGrids(IN Coption& config, OUT GridInfo& grid);
+extern bool setGrd(IN Coption& config, OUT GridInfo& grid);
 /* @brief set atmo epoch-wise */
-extern bool movAtmos(IN Gtime tnow, SiteAtmos& stas, OUT AtmoInfo& stecinf);
+extern bool setAtm(IN Gtime tnow, SiteAtmos& stas, OUT AtmoInfo& stecinf);
 
 /* @brief release file fps */
 extern void freeFps(IO Coption& cfg, IO FileFps& fps);

@@ -5,6 +5,11 @@
 #include "commtime.h"
 #include "comminterface.h"
 
+typedef Eigen::MatrixXd MatXd;
+typedef Eigen::VectorXd VecXd;
+typedef map<string, map<int, FILE*>> FileFps;
+typedef std::vector<double> Dvec;
+
 struct StaDistIon
 {
 	StaDistIon() = default;
@@ -78,8 +83,11 @@ extern void time2str(IN Gtime t, IN char* s, IN int opt);
 
 /* math */
 extern void calcMeanStd(IN vector<double> data, OUT double& vmean, OUT double& vstd);
+extern void calcMeanStd(IN VecXd data, OUT double& vmean, OUT double& vstd);
 extern double robust(IN double V, OUT double rms);
 extern double modelIDW(IN StaDistIonArr& list, IN int nused, IN double maxdist, IN int k, OUT int* n);
 extern double modelMSF(IN StaDistMSFArr& list, IN int sz);
+extern void polynomial2(IN double x, IN double y, IN int order, IN int idmax, IO int& id, OUT VecXd& vec);
+extern void polynomial3(IN double x, IN double y, IN double z, IN int order, IN int idmax, IO int& id, OUT VecXd& vec);
 
 #endif

@@ -4,6 +4,7 @@
 #include "comminterface.h"
 #include "localmodclass.h"
 #include "stecmodel.h"
+#include "ztdmodel.h"
 
 class EleStation
 {
@@ -39,12 +40,11 @@ public:
 	LocalAtmoModel() 
 	{
 		_stanumGEC = _stanumR = 0;
-		_useres = 0;
 		_nbadroti = 0;
 	}
 	~LocalAtmoModel() {}
 
-	void setUseres(IN int res);
+	void setBasic(IN int res);
 	void setReigon(IN GridInfo& grid);
 	void setOption(IN ProOption& opt);
 	bool setRefSites(IN SiteAtmos& stas);
@@ -68,18 +68,25 @@ public:
 	void copyStecMod(IN StecModEpoch& src, OUT ProStecMod& dst);
 	bool doStecMod(IN Gtime tnow, IN AtmoInfo& stecinf, OUT ProStecMod& stecmod);
 
+	int inputZtdEpoch(IN Gtime tnow, IN AtmoInfo& ztdinf);
+	int sparseSites();
+	void copyZtdMod(IN int npara, IN ZtdModEpoch& src, OUT ProZtdMod& dst);
+	bool doZtdMod(IN Gtime tnow, IN AtmoInfo& ztdinf, OUT ProZtdMod& ztdmod);
+	
 	int _stanumGEC;							// station number GEC
 	int _stanumR;							// station number R
-	int _useres;							// if use res [0]no use [1]use
 
 	ProOption _proOption;					// process option
 	StecModel _stecPro;						// stec process model
+	ZtdModel  _ztdPro;						// ztd process model
 
 	GridInfo              _gridinfo;		// basic grid info
 	map<int, SiteInfo>    _allsites;		// all ref sites info
 
 	AtmoEpochs _stecGroupGEC;	// stec group GEC
 	AtmoEpochs _stecGroupR;		// stec group R
+
+	ZtdInfos _ztds;
 	/* debug */
 	int _nbadroti;
 

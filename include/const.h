@@ -3,6 +3,7 @@
 
 #include <string>
 #include <set>
+#include <unordered_set>
 #include <vector>
 #include <map>
 #include <unordered_map>
@@ -137,6 +138,11 @@ const double FREQ_ALL[NUMSYS][NFREQ] = {{FREQ1_GPS,FREQ2_GPS,FREQ5_GPS},
 #define FIT_IDW              0                 // IDW fitting
 #define FIT_MSF              1                 // MSF fitting
 
+/* ztd model ----------------------------------------------------------------------*/
+#define REL_HUMI             0.7               // relative humidity for saastamoinen model
+#define MODEL_OFC            0                 // ofc model(9 para)
+#define MODEL_OFC_MSL        1                 // ofc model aligned to mean sea level(6 para)
+#define MODEL_MOFC           2                 // modified ofc model(7 para)
 
 //const double CUT_DIST     = 300.0 * 1E+3;
 const double GRID_STEPN   = 20;

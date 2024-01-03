@@ -31,6 +31,7 @@
     <ClInclude Include="include\readfiles.h" />
     <ClInclude Include="include\stecmodel.h" />
     <ClInclude Include="include\stecroti.h" />
+    <ClInclude Include="include\ztdmodel.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\algmatrix.cpp" />
@@ -43,6 +44,7 @@
     <ClCompile Include="src\readfiles.cpp" />
     <ClCompile Include="src\stecmodel.cpp" />
     <ClCompile Include="src\stecroti.cpp" />
+    <ClCompile Include="src\ztdmodel.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

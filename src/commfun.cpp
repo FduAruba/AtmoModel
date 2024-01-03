@@ -317,6 +317,23 @@ extern void calcMeanStd(IN vector<double> data, OUT double& vmean, OUT double& v
 	}
 }
 
+extern void calcMeanStd(IN VecXd data, OUT double& vmean, OUT double& vstd)
+{
+	vmean = vstd = 0.0;
+
+	int n = data.size();
+	if (n > 0) {
+		double sum = accumulate(data.begin(), data.end(), 0.0);
+		vmean = sum / n;
+
+		double var = 0.0;
+		for (int i = 0; i < data.size(); i++) {
+			var += pow(data[i] - vmean, 2);
+		}
+		vstd = sqrt(var / (n - 6));
+	}
+}
+
 extern double robust(IN double V, OUT double rms)
 {
 	double k0 = 1.5;
@@ -405,4 +422,38 @@ extern double modelMSF(IN StaDistMSFArr& list, IN int sz)
 
 	res = a.dot(x);
 	return res;
+}
+
+extern void polynomial2(IN double x, IN double y, IN int order, IN int idmax, IO int& id, OUT VecXd& vec)
+{
+	int idx = 0;
+	for (int i = order; i >= 0; i--) {
+		if (id + idx < idmax) {
+			vec(id + idx) = pow(x, i) * pow(y, order - i);
+			idx++;
+		}
+		else {
+			id += (idx - 1);
+			return;
+		}
+	}
+	id += idx;
+}
+
+extern void polynomial3(IN double x, IN double y, IN double z, IN int order, IN int idmax, IO int& id, OUT VecXd& vec)
+{
+	int idx = 0;
+	for (int i = order; i >= 0; i--) {
+		for (int j = order - i; j >= 0; j--) {
+			if (id + idx < idmax) {
+				vec(id + idx) = pow(x, i) * pow(y, j) * pow(z, order - i - j);
+				idx++;
+			}
+			else {
+				id += (idx - 1);
+				return;
+			}
+		}
+	}
+	id += idx;
 }

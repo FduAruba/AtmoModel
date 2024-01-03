@@ -75,7 +75,13 @@ void rovStecDiff(IN Coption& cfg, IN GridInfo& grid, IN FILE* fp, IN SiteAtmo& r
 void outRovStec(IN Coption& cfg, IN GridInfo& grid, IN SiteAtmos& rovaug, IN ProStecMod& stecmod, IN FileFps& rovfps, IN int type);
 void writeModelHead(IN  Coption& cfg, IN FILE* fp);
 void printSatMod(IN int useres, IN ProStecModSat& dat, IN FILE* fp);
+void printEpochSTEC(IN Gtime tnow, IN ProStecMod& stecmod, IN int ngrid, IN FILE* fp);
 void outStecModel(IN Gtime tnow, IN  Coption& cfg, IN GridInfo& grid, IN ProStecMod& stecmod, IN FILE* fp);
+void printEpochZTD(IN Gtime tnow, IN ProZtdMod& ztdmod, IN FILE* fp);
+void printEpoch(IN Gtime tnow, IN bool* stat, IN ProStecMod& stecmod, IN ProZtdMod& ztdmod, IN int ngrid, IN FILE* fp);
+void outZtdModel(IN Gtime tnow, IN GridInfo& grid, IN ProZtdMod& ztdmod, IN FILE* fp);
+void outAtmoModel(IN Gtime tnow, IN  Coption& cfg, IN GridInfo& grid, IN bool* stat,
+	IN ProStecMod& stecmod, IN ProZtdMod& ztdmod, IN FILE* fp);
 void createRovFile(IN Coption& cfg, OUT FileFps& fps);
 
 #endif

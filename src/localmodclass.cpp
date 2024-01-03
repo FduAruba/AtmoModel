@@ -77,6 +77,16 @@ void ProStecMod::reset()
 	}
 }
 
+void ProZtdMod::reset()
+{
+	_time = { 0 };
+	_zhd = 0;
+	_nsta = _ncoeff = _qi = 0;
+	for (int i = 0; i < 10; i++) {
+		_coeff[i] = _coeff_rms[i] = 0;
+	}
+}
+
 SatInfo::SatInfo(IN SatSol src)
 {
 	_sys     = src._sys;
@@ -156,7 +166,7 @@ void ProOption::deepcopy(IN ProOption& src)
 	}
 	_maxsatres    = src._maxsatres;
 	_algotype     = src._algotype;
-	_fittype      = src._fittype;
+	_ionotype     = src._ionotype;
 	_diffmode     = src._diffmode;
 	_refsatsmooth = src._refsatsmooth;
 	_minel        = src._minel;
@@ -166,6 +176,9 @@ void ProOption::deepcopy(IN ProOption& src)
 	_qimulti = src._qimulti;
 	_qibase  = src._qibase;
 	_qicoeff = src._qicoeff;
+	_troptype = src._troptype;
+	_bsparse = src._bsparse;
+	_meanzhd = src._meanzhd;
 }
 
 void SiteGridDist::calcAllDist(IN AtmoEpoch& atmo, IN GridInfo& grid)

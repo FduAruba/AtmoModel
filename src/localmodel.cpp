@@ -1,8 +1,9 @@
 #include "localmodel.h"
 
-void LocalAtmoModel::setUseres(IN int res)
+void LocalAtmoModel::setBasic(IN int res)
 {
-	_useres = res;
+	this->_stecPro.setBasicOption(this->_proOption, res);
+	this->_ztdPro.setBasicOption(this->_proOption, res);
 }
 
 void LocalAtmoModel::setReigon(IN GridInfo& grid)
@@ -17,6 +18,7 @@ void LocalAtmoModel::setOption(IN ProOption& opt)
 
 bool LocalAtmoModel::setRefSites(IN SiteAtmos& stas)
 {
+	_stanumGEC = _stanumR = 0;
 	for (auto pSta : stas) {
 		int id = pSta.first;
 
@@ -38,6 +40,15 @@ bool LocalAtmoModel::setRefSites(IN SiteAtmos& stas)
 					_allsites[id]._satNum[i] = 0;
 					_allsites[id]._supSys[i] = 0;
 				}
+			}
+			if (pSta.second._satIon[0].size() > 0 ||
+				pSta.second._satIon[2].size() > 0 ||
+				pSta.second._satIon[3].size() > 0 ||
+				pSta.second._satIon[4].size() > 0) {
+				_stanumGEC++;
+			}
+			if (pSta.second._satIon[1].size() > 0) {
+				_stanumR++;
 			}
 		}
 		else {
@@ -446,6 +457,7 @@ bool LocalAtmoModel::inputAtmoEpoch(IN Gtime tnow, IN AtmoInfo& stecinf, IN bool
 				//char SYS = idx2sys(isys);
 				//printf("%s erase %c%02d\n", tstr.c_str(), SYS, prn);
 				_stecPro._satList[isys].erase(prn);
+				numStas[isys].erase(prn);
 			}
 		}
 	}
@@ -467,11 +479,13 @@ bool LocalAtmoModel::doStecModSys(IN int symbol)
 
 	/* 设置当前系统 */
 	if (!_stecPro.setCurSys(_proOption._usesys, symbol)) {
+		//printf("1\n");
 		return false;
 	}
 
 	/* 数据预处理 */
 	if (!_stecPro.preCheckSatModel(_stecPro._tnow, *groupAtmo, proAtmo)) {
+		//printf("2\n");
 		return false;
 	}
 
@@ -479,7 +493,10 @@ bool LocalAtmoModel::doStecModSys(IN int symbol)
 	_stecPro.initStecMod(proAtmo);
 
 	/* stec单星建模 */
-	_stecPro.satModEst(proAtmo, _gridinfo);
+	if (!_stecPro.satModEst(proAtmo, _gridinfo)) {
+		//printf("3  %2d\n", _stecPro._satList[0].size());
+		return false;
+	}
 
 	if (_stecPro._stecRoti._badroti > 4) {
 		_nbadroti++;
@@ -616,9 +633,12 @@ void LocalAtmoModel::copyStecMod(IN StecModEpoch& src, OUT ProStecMod& dst)
 bool LocalAtmoModel::doStecMod(IN Gtime tnow, IN AtmoInfo& stecinf, OUT ProStecMod& stecmod)
 {
 	bool stat = false;
+	string tstr = strtime(tnow, 2);
+	int ep[6] = { 0 };
+	time2epoch(tnow, ep);
 	_stecPro.settime(tnow);
 
-	/* 1.输入当前历元的STEC数据  */
+	/* 1.输入当前历元的STEC数据 */
 	if (!inputAtmoEpoch(tnow, stecinf, true)) {
 		return false;
 	}
@@ -627,6 +647,7 @@ bool LocalAtmoModel::doStecMod(IN Gtime tnow, IN AtmoInfo& stecinf, OUT ProStecM
 	if (_stanumGEC > 0) { stat |= doStecModSys(0); }
 	if (_stanumR   > 0) { stat |= doStecModSys(1); }
 	if (!stat) {
+		//printf("%s do stecmod fail\n", tstr.c_str());
 		return false;
 	}
 
@@ -651,4 +672,120 @@ bool LocalAtmoModel::doStecMod(IN Gtime tnow, IN AtmoInfo& stecinf, OUT ProStecM
 	this->copyStecMod(stecModNow, stecmod);
 
 	return true;
+}
+
+int LocalAtmoModel::inputZtdEpoch(IN Gtime tnow, IN AtmoInfo& ztdinf)
+{
+	string tstr = strtime(tnow, 2);
+	double maxlat = -999, maxlon = -999, minlat = 999, minlon = 999;
+	/* 1.导入数据 */
+	for (auto& iSta : ztdinf._sitesols) {
+		ZtdInfo inf;
+		inf._time    = iSta.second._time;
+		inf._name    = iSta.second._name;
+		inf._ID      = iSta.second._ID;
+		inf._zhd     = iSta.second._zhd;
+		inf._zwd     = iSta.second._zwd;
+		inf._std_zwd = iSta.second._std_zwd;
+		for (int i = 0; i < 3; i++) {
+			inf._xyz[i] = iSta.second._xyz[i];
+			inf._blh[i] = iSta.second._blh[i];
+		}
+
+		if (inf._blh[0] > _gridinfo._latcell[0] * D2R &&
+			inf._blh[0] < _gridinfo._latcell[1] * D2R &&
+			inf._blh[1] > _gridinfo._loncell[0] * D2R &&
+			inf._blh[1] < _gridinfo._loncell[1] * D2R)
+		{
+			_ztds.emplace(inf._name, inf);
+		}
+	}
+	/* 2.站点分布稀疏化 */
+	if (_proOption._bsparse) { sparseSites(); }
+
+	/* 3.统计站点分布 */
+	//for (auto& iSta : _ztds) {
+	//	if (iSta.second._blh[0] < minlat) { minlat = iSta.second._blh[0]; }
+	//	if (iSta.second._blh[0] > maxlat) { maxlat = iSta.second._blh[0]; }
+	//	if (iSta.second._blh[1] < minlon) { minlon = iSta.second._blh[1]; }
+	//	if (iSta.second._blh[1] > maxlon) { maxlon = iSta.second._blh[1]; }
+	//}
+	//printf("%s %7.2f %7.2f %7.2f %7.2f\n", tstr.c_str(), minlat * R2D, maxlat * R2D, minlon * R2D, maxlon * R2D);
+	
+	return (int)_ztds.size();
+}
+
+int LocalAtmoModel::sparseSites()
+{
+	int k = 0;
+	map<double, string> dists;
+	ZtdInfos ztd_sp;
+
+	for (auto& iCel : _gridinfo._cells) {
+		k = 0;
+		dists.clear();
+		//printf("%2d: ", iCel.first);
+		
+		for (auto& iSta : _ztds) {
+			if (iSta.second._blh[0] > iCel.second[0] && iSta.second._blh[0] < iCel.second[1] &&
+				iSta.second._blh[1] > iCel.second[3] && iSta.second._blh[1] < iCel.second[4]) 
+			{
+				double dist = sphereDist(iSta.second._blh[0], iSta.second._blh[1], iCel.second[2], iCel.second[5]);
+				dists.emplace(dist, iSta.first);
+			}
+		}
+
+		for (auto iDist : dists) {
+			if (k++ < 2) {
+				ztd_sp.emplace(iDist.second, _ztds[iDist.second]);
+				//printf("%4s ", iDist.second.c_str());
+			}
+			_ztds.erase(iDist.second);
+		}
+		//printf("\n");
+	}
+	_ztds = ztd_sp;
+
+	return (int)_ztds.size();
+}
+
+void LocalAtmoModel::copyZtdMod(IN int npara, IN ZtdModEpoch& src, OUT ProZtdMod& dst)
+{
+	dst._time = src._time;
+	dst._zhd  = src._zhd;
+	dst._qi   = src._qi;
+	dst._ncoeff = npara;
+	dst._nsta = src._nsta;
+	for (int i = 0; i < npara; i++) {
+		dst._coeff[i] = src._coeff[i];
+		dst._coeff_rms[i] = src._coeff_rms[i];
+	}
+}
+
+bool LocalAtmoModel::doZtdMod(IN Gtime tnow, IN AtmoInfo& ztdinf, OUT ProZtdMod& ztdmod)
+{
+	int nsit = 0, bmean = _proOption._meanzhd;
+	bool stat = false;
+	string tstr = strtime(tnow, 2);
+
+	_ztdPro.settime(tnow);
+	_ztds.clear();
+	
+	/* 1.输入当前历元的ZTD数据 */
+	if (!(nsit = inputZtdEpoch(tnow, ztdinf))) {
+		return false;
+	}
+
+	/* 2.ztd对齐至海平面msl */
+	_ztdPro.ztd2msl(bmean, _ztds);
+
+	/* 3.zwd建模 */
+	stat = _ztdPro.ofcModel(tnow, _ztds, _gridinfo, bmean);
+	//if (!stat) { cout << tstr << " ofc fail " << _ztds.size() << endl; }
+
+	/* 4.保存当前建模信息 */
+	ZtdModEpoch ztdModNow = _ztdPro._ztdModCur;
+	this->copyZtdMod(_ztdPro._ncoeff, ztdModNow, ztdmod);
+
+	return stat;
 }

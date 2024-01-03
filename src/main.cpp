@@ -86,73 +86,69 @@ void outdebug(IN Coption& config, IN LocalAtmoModel* localMod)
 
 int main()
 {
-	int dbg = 1;
+	int dbg = 0, cnt = 0;
+	char tstr[64] = { '\0' };
 	double t1, t2;
+	bool stat[4] = { false };
 	char fname[MAXCHARS] = "C:\\Users\\shuqh\\Desktop\\rsim.cfg";
+	//char fname[MAXCHARS] = "C:\\Users\\Administrator\\Desktop\\rsim.cfg";
 	Coption config;									// 配置文件
-	ProOption* popt          = new ProOption;		// 处理设置
-	GridInfo* grid           = new GridInfo;		// 格网点信息
-	AtmoInfo* stecinf        = new AtmoInfo;		// stec数据
-	ProStecMod* stecmod      = new ProStecMod;		// stec建模
+	//ProOption* popt          = new ProOption;		// 处理设置
+	//GridInfo* grid           = new GridInfo;		// 格网点信息
 	LocalAtmoModel* localMod = new LocalAtmoModel;	// 大气建模类
+	AtmoInfo* atmoinf        = new AtmoInfo;		// 大气数据
+	ProStecMod* stecmod      = new ProStecMod;		// stec建模
+	ProZtdMod* ztdmod		 = new ProZtdMod;		// ztd建模
 	FileFps outfps;									// 输出文件指针
 	StaRotiMap stamap;								// ROTI信息
 	
 	t1 = clock();
 	/* 读取配置文件 */
 	if (readConfigFile(fname, config)) {
-		movOption(config, *popt);
-		movGrids(config, *grid);
+		setOpt(config, localMod->_proOption);
+		setGrd(config, localMod->_gridinfo);
 	}
-	else {
-		return -1;
-	}
+	else { return -1; }
 	
 	Gtime ts = epoch2time(config._ts);
 	Gtime te = epoch2time(config._te);
-	for (Gtime t = ts; t <= te; t.time += (time_t)config._ti) {
-		string tstr = strtime(t, 2);
-		printf("\r%s: processing...%c", tstr.c_str(), t == te ? '\n' : '\0');
-
+	for (Gtime t = ts; t <= te; t.time += (time_t)config._ti) {		
+		time2str(t, tstr, 2);
+		printf("\r%s: processing...%c", tstr, t == te ? '\n' : '\0');
+		/* 历元基础设置 */
+		if (t == ts) {
+			localMod->setBasic(config._useres);
+			createRovFile(config, outfps);
+		}
 		/* 读取单站数据 */
 		SiteAtmos stas, rovs;
 		if (!readAugmentData(t, config, stas, rovs)) {
 			continue;
 		}
-
-		/* 分配历元数据 */
-		stecinf->reset(); stecmod->reset();
-		if (!movAtmos(t, stas, *stecinf)) {
-			continue;
-		}
-
-		/* 历元基础设置 */
-		if (t == ts) {
-			localMod->setUseres(config._useres);
-			localMod->setReigon(*grid);
-			localMod->setOption(*popt);
-			localMod->_stecPro.setBasicOption(*popt, config._useres);
-			createRovFile(config, outfps);
-			writeModelHead(config, outfps["MODEL"][1]);
-		}
 		localMod->setRefSites(stas);
-
-		/* 验证站ROTI计算输出 */
-		rovRoti(t, rovs, stamap);
-		outRovRoti(t, stamap, outfps);
-		
+		/* 分配历元数据 */
+		atmoinf->reset();
+		if (!setAtm(t, stas, *atmoinf)) {
+			continue;
+		}		
 		/* 大气建模 */
 		if (config._modeltype & 1) {
-			if (localMod->doStecMod(t, *stecinf, *stecmod)) {
-				outRovStec(config, *grid, rovs, *stecmod, outfps, 1);
-				outStecModel(t, config, *grid, *stecmod, outfps["MODEL"][1]);
-			}
+			stecmod->reset();
+			stat[0] = localMod->doStecMod(t, *atmoinf, *stecmod);
 		}
-		if (config._modeltype & 2) { //TODO: ZTD建模
+		if (config._modeltype & 2) {
+			ztdmod->reset();
+			stat[1] = localMod->doZtdMod(t, *atmoinf, *ztdmod);
 		}
-		if (config._modeltype & 4) { //TODO: STD建模
-		}
-		if (config._modeltype & 8) { //TODO: VTEC建模
+		//if (config._modeltype & 4) { //TODO: STD建模
+		//}
+		//if (config._modeltype & 8) { //TODO: VTEC建模
+		//}
+		/* 输出建模结果 */
+		outAtmoModel(t, config, localMod->_gridinfo, stat, *stecmod, *ztdmod, outfps["MODEL"][1]);
+		if (dbg) {
+			rovRoti(t, rovs, stamap);
+			outRovRoti(t, stamap, outfps);
 		}
 	}
 
@@ -163,7 +159,7 @@ int main()
 
 	/* 释放内存空间 */
 	freeFps(config, outfps);
-	delete popt; delete grid; delete stecinf; delete stecmod; delete localMod;
-
+	//delete popt; delete grid; 
+	delete atmoinf; delete stecmod; delete ztdmod; delete localMod;
 	return 0;
 }
